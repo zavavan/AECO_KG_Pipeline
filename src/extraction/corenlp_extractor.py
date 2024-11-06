@@ -1,7 +1,6 @@
 # command to run the stanford core nlp server
 # nohup java -mx8g -cp "*" edu.stanford.nlp.pipeline.StanfordCoreNLPServer -port 9050 -timeout 15000 >/dev/null 2>&1 &
 
-from nltk.tokenize.treebank import TreebankWordDetokenizer
 from stanfordcorenlp import StanfordCoreNLP
 from nltk.corpus import stopwords
 import multiprocessing as mp
@@ -362,7 +361,6 @@ def extraction(filename):
 	for row in f:
 		drow = json.loads(row)
 		paper2dygiepp[drow['doc_key']] = getDygieppResults(drow)
-		#print(paper2dygiepp[drow['doc_key']])
 	f.close()
 
 	nlp = StanfordCoreNLP('http://localhost', port=9050)
@@ -399,6 +397,7 @@ if __name__ == '__main__':
 
 
 	files_to_parse = [filename for filename in os.listdir(dataset_dump_dir)]
+	print(len(files_to_parse))
 	pool = mp.Pool(10)
 	result = pool.map(extraction, files_to_parse)
 	
