@@ -78,18 +78,19 @@ def getDygieppResults(dresult):
 	for i in range(len(sentences)):
 		entities = []
 		relations = []
-		for ner_el in dner[i]:
-			e = ' '.join(text[ner_el[0]:ner_el[1]+1])
-			e_type = ner_el[2]
-			entities += [(e, e_type)]	
-
-		for relations_el in drelations[i]:
-			r = relations_el[4]
-			#if r == 'CONJUNCTION':
-			#	continue
-			e1 = ' '.join(text[relations_el[0]:relations_el[1]+1])
-			e2 = ' '.join(text[relations_el[2]:relations_el[3]+1])
-			relations += [(e1, r, e2)]
+		if dner[i]:
+			for ner_el in dner[i]:
+				e = ' '.join(text[ner_el[0]:ner_el[1]+1])
+				e_type = ner_el[2]
+				entities += [(e, e_type)]
+		if drelations[i]:
+			for relations_el in drelations[i]:
+				r = relations_el[4]
+				#if r == 'CONJUNCTION':
+				#	continue
+				e1 = ' '.join(text[relations_el[0]:relations_el[1]+1])
+				e2 = ' '.join(text[relations_el[2]:relations_el[3]+1])
+				relations += [(e1, r, e2)]
 
 		sentence2data[i] = {'entities' :  entities, 'relations' : relations}
 	return sentence2data
