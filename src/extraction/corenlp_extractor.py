@@ -13,7 +13,7 @@ import ast
 import os
 import re
 
-dataset_dump_dir = '../../dataset/computer_science/'
+dataset_dump_dir = '../../dataset/aeco/'
 dygiepp_output_dump_dir = '../../outputs/dygiepp_output/'
 output_dir = '../../outputs/extracted_triples/'
 stops = list(stopwords.words('english')) + ['it', 'we', 'they', 'its']
