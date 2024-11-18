@@ -69,8 +69,11 @@ def detectAcronyms(elist):
 
 def getDygieppResults(dresult):
 	sentences = dresult['sentences']
+	print('num sentences: ' + str(len(sentences)))
 	dner = dresult['predicted_ner']
+	print('num predicted_ner: ' + str(len(dner)))
 	drelations = dresult['predicted_relations']
+	print('num predicted_relations: ' + str(len(drelations)))
 
 	text = [token for sentence in sentences for token in sentence]
 	sentence2data = {}
@@ -78,19 +81,17 @@ def getDygieppResults(dresult):
 	for i in range(len(sentences)):
 		entities = []
 		relations = []
-		if dner[i]:
-			for ner_el in dner[i]:
-				e = ' '.join(text[ner_el[0]:ner_el[1]+1])
-				e_type = ner_el[2]
-				entities += [(e, e_type)]
-		if drelations[i]:
-			for relations_el in drelations[i]:
-				r = relations_el[4]
-				#if r == 'CONJUNCTION':
-				#	continue
-				e1 = ' '.join(text[relations_el[0]:relations_el[1]+1])
-				e2 = ' '.join(text[relations_el[2]:relations_el[3]+1])
-				relations += [(e1, r, e2)]
+		for ner_el in dner[i]:
+			e = ' '.join(text[ner_el[0]:ner_el[1]+1])
+			e_type = ner_el[2]
+			entities += [(e, e_type)]
+		for relations_el in drelations[i]:
+			r = relations_el[4]
+			#if r == 'CONJUNCTION':
+			#	continue
+			e1 = ' '.join(text[relations_el[0]:relations_el[1]+1])
+			e2 = ' '.join(text[relations_el[2]:relations_el[3]+1])
+			relations += [(e1, r, e2)]
 
 		sentence2data[i] = {'entities' :  entities, 'relations' : relations}
 	return sentence2data
