@@ -76,11 +76,11 @@ def detectAcronyms(elist):
 
 def getDygieppResults(dresult):
 	sentences = dresult['sentences']
-	print('num sentences: ' + str(len(sentences)))
+	#print('num sentences: ' + str(len(sentences)))
 	dner = dresult['predicted_ner']
-	print('num predicted_ner: ' + str(len(dner)))
+	#print('num predicted_ner: ' + str(len(dner)))
 	drelations = dresult['predicted_relations']
-	print('num predicted_relations: ' + str(len(drelations)))
+	#print('num predicted_relations: ' + str(len(drelations)))
 
 	text = [token for sentence in sentences for token in sentence]
 	sentence2data = {}
@@ -380,7 +380,7 @@ def extraction(filename):
 			corenlp_out = {}
 			props = {'annotators': 'openie,tokenize,pos,depparse', 'pipelineLanguage': 'en', 'outputFormat': 'json'}
 			try:
-				text_data = paper2metadata[paper_id]['papertitle'].encode('utf8', 'ignore').decode('ascii', 'ignore') + '. ' + paper2metadata[paper_id]['abstract'].encode('utf8', 'ignore').decode('ascii', 'ignore')
+				text_data = paper2metadata[paper_id]['title'].encode('utf8', 'ignore').decode('ascii', 'ignore') + '. ' + paper2metadata[paper_id]['abstract'].encode('utf8', 'ignore').decode('ascii', 'ignore')
 				corenlp_out = json.loads(nlp.annotate(text_data, properties=props))
 				openie_triples = getOpenieTriples(corenlp_out, paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'])
 				pos_triples = getPosTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'])
