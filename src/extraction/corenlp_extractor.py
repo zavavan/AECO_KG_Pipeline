@@ -15,7 +15,14 @@ import re
 
 dataset_dump_dir = '../../dataset/aeco/'
 dygiepp_output_dump_dir = '../../outputs/dygiepp_output/'
+
 output_dir = '../../outputs/extracted_triples/'
+if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print(f"Folder created: {output_dir}")
+else:
+	print(f"Folder already exists: {output_dir}")
+
 stops = list(stopwords.words('english')) + ['it', 'we', 'they', 'its']
 
 # used to check if an openie entity is a real entity of the domain
