@@ -376,7 +376,7 @@ def extraction(filename):
 	nlp = StanfordCoreNLP('http://localhost', port=9050)
 	paper2openie = {}
 	print('> processing: ' + filename + ' core nlp extraction')
-	for paper_id in enumerate(tqdm.tqdm(paper2metadata.keys(), total=len(paper2metadata.keys()), desc="Processing articles in the dataset:")):
+	for index,paper_id in enumerate(tqdm(paper2metadata.keys(), total=len(paper2metadata.keys()), desc="Processing articles in the dataset:")):
 		if paper_id in paper2dygiepp:
 			corenlp_out = {}
 			props = {'annotators': 'openie,tokenize,pos,depparse', 'pipelineLanguage': 'en', 'outputFormat': 'json'}
