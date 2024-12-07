@@ -14,6 +14,9 @@ import os
 import re
 from tqdm import tqdm
 
+from functools import partial
+
+
 dataset_dump_dir = '../../dataset/aeco/'
 dygiepp_output_dump_dir = '../../outputs/dygiepp_output/'
 llm_output_dump_dir = '../../outputs/llm_output/'
@@ -488,13 +491,86 @@ def extraction(filename):
 	fw.close()
 
 
+def extraction(filename,llm):
+	if filename[-5:] != '.json':
+		return
+
+	print('> processing: ' + filename)
+	fw = open(output_dir + filename, 'w+')
+
+	print('> processing: ' + filename + ' metadata reading')
+	f = open(dataset_dump_dir + filename, 'r')
+	paper2metadata = {}
+	for row in f:
+		drow = json.loads(row)
+		paper_id = drow['_id']
+		paper2metadata[paper_id] = drow['_source']
+	f.close()
+
+	print('> processing: ' + filename + ' dygiepp reading')
+	f = open(dygiepp_output_dump_dir + filename, 'r')
+	paper2dygiepp = {}
+	for row in f:
+		drow = json.loads(row)
+		paper2dygiepp[drow['doc_key']] = getDygieppResults(drow)
+	f.close()
+
+	paper2llm = {}
+	if llm:
+		print('> processing: ' + filename + ' Llm annotation')
+		f = open(llm_output_dump_dir + filename, 'r')
+		for row in f:
+			drow = json.loads(row)
+			paper2llm[drow['doc_key']] = getLlmResults(drow)
+		f.close()
+
+
+	nlp = StanfordCoreNLP('http://localhost', port=9050)
+	paper2openie = {}
+	print('> processing: ' + filename + ' core nlp extraction')
+	for index,paper_id in enumerate(tqdm(paper2metadata.keys(), total=len(paper2metadata.keys()), desc="Processing articles in the dataset:")):
+		if paper_id in paper2dygiepp:
+			corenlp_out = {}
+			props = {'annotators': 'openie,tokenize,pos,depparse', 'pipelineLanguage': 'en', 'outputFormat': 'json'}
+			try:
+				text_data = paper2metadata[paper_id]['title'].encode('utf8', 'ignore').decode('ascii', 'ignore') + '. ' + paper2metadata[paper_id]['abstract'].encode('utf8', 'ignore').decode('ascii', 'ignore')
+				corenlp_out = json.loads(nlp.annotate(text_data, properties=props))
+				openie_triples = getOpenieTriples(corenlp_out, paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'])
+				pos_triples = getPosTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'])
+				dependency_triples = getDependencyTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] + paper2metadata[paper_id]['cso_syntactic_topics'])
+				entities, dygiepp_triples, llm_triples = manageEntitiesAndDygieepRelations(paper2dygiepp[paper_id],paper2llm[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'])
+
+				data_input_for_dygepp = json.dump({
+						'doc_key' : str(paper_id),
+						'entities' : list(entities),
+						'openie_triples' : list(openie_triples),
+						'pos_triples' : list(pos_triples),
+						'dependency_triples' : list(dependency_triples),
+						'dygiepp_triples' : list(dygiepp_triples),
+						'llm_triples': list(llm_triples)
+					},fw)
+				fw.write('\n')
+			except Exception as e:
+				print(e)
+	fw.flush()
+	fw.close()
+
 if __name__ == '__main__':
+
+	if len(sys.argv) == 1:
+		importLLMData = sys.argv[1]
+
+	else:
+		print('> python corenlp_extractor.py importLLMout')
+		exit(1)
+	# Use functools.partial to fix the second argument
+	extraction_with_bool = partial(extraction, booleanArgument=importLLMData)
 
 
 	files_to_parse = [filename for filename in os.listdir(dataset_dump_dir)]
 	print(len(files_to_parse))
 	pool = mp.Pool(10)
-	result = pool.map(extraction, files_to_parse)
+	result = pool.map(extraction_with_bool, files_to_parse)
 	
 	#detectAcronyms([('machine learning (ML)', 'A'), ('danilo dessi', 'B'), ('natural language processing (NLP)', 'C'), ('Natural Language Processing (NLP)', 'C')])
 
