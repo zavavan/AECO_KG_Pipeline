@@ -105,6 +105,11 @@ def getDygieppResults(dresult):
 		sentence2data[i] = {'entities' :  entities, 'relations' : relations}
 	return sentence2data
 
+
+## This is the function that reads LLM-generated ent/rels from dygiepp pre-formatted file
+# It discards entities with entity token spans > 7 and their corresponding relations:
+
+
 def getLlmResults(dresult):
 	sentences = dresult['sentences']
 	#print('num sentences: ' + str(len(sentences)))
@@ -115,23 +120,47 @@ def getLlmResults(dresult):
 
 	text = [token for sentence in sentences for token in sentence]
 	sentence2data = {}
-
+	added_ent_count = 0
+	added_rel_count = 0
+	discarded_ent_count=0
+	discarded_rel_count = 0
 	for i in range(len(sentences)):
 		entities = []
 		relations = []
 		for ner_el in dner[i]:
-			e = ' '.join(text[ner_el[0]:ner_el[1]+1])
-			e_type = ner_el[2]
-			entities += [(e, e_type)]
+			if int(ner_el[1]) - int(ner_el[0]) > 6:
+				discarded_ent_count+=1
+			else:
+				e = ' '.join(text[ner_el[0]:ner_el[1]+1])
+				e_type = ner_el[2]
+				entities += [(e, e_type)]
+				added_ent_count+=1
+
 		for relations_el in drelations[i]:
-			r = relations_el[4]
-			#if r == 'CONJUNCTION':
-			#	continue
-			e1 = ' '.join(text[relations_el[0]:relations_el[1]+1])
-			e2 = ' '.join(text[relations_el[2]:relations_el[3]+1])
-			relations += [(e1, r, e2)]
+			if int(relations_el[1]) - int(relations_el[0]) > 6 or int(relations_el[3]) - int(relations_el[2]) > 6 :
+				discarded_rel_count+=1
+			else:
+				r = relations_el[4]
+				e1 = ' '.join(text[relations_el[0]:relations_el[1]+1])
+				e2 = ' '.join(text[relations_el[2]:relations_el[3]+1])
+				relations += [(e1, r, e2)]
+				added_rel_count+=1
 
 		sentence2data[i] = {'entities' :  entities, 'relations' : relations}
+
+	## discard relations with entity token spans > 7 (it doesn't alter remove entities):
+	discarded_ent_count=0
+	discarded_rel_count = 0
+	for i,entRel in sentence2data.items():
+		for rel in entRel['relations']:
+			if len(rel[0]).split()>7 or len(rel[2]).split()>7:
+				entRel['relations'].remove(rel)
+
+	print(f"Imported {added_ent_count} entities from LLM")
+	print(f"Imported {added_rel_count} relations from LLM")
+	print(f"Discarded {discarded_ent_count} long entities from LLM")
+	print(f"Discarded {discarded_rel_count} relations connecting long entities from LLM")
+
 	return sentence2data
 
 

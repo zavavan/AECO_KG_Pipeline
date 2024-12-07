@@ -14,6 +14,7 @@ class TriplesGenerator:
 	def __init__(self):
 		self.entities2files = {}
 		self.dygiepp2files = {}
+		self.llm2files = {}
 		self.openie2files = {}
 		self.pos2files = {}
 		self.dependency2files = {}
@@ -191,15 +192,17 @@ class TriplesGenerator:
 		print('>> Loading')
 		if ckpts_loading and not ckpts_cleaning and not ckpts_validation and not ckpts_relations_handler and not ckpts_mapping:
 			print('\t>> Loaded from ckpts')
-			self.dygiepp2files, self.openie2files, self.pos2files, self.dependency2files, self.entities2files = self.loadCheckpoint('loading')
+			self.dygiepp2files, self.llm2files, self.openie2files, self.pos2files, self.dependency2files, self.entities2files = self.loadCheckpoint('loading')
 			print(' \t- dygiepp triples:\t', len(self.dygiepp2files))
+			print(' \t- llm triples:\t', len(self.llm2files))
 			print(' \t- openie triples:\t', len(self.openie2files))
 			print(' \t- pos triples:\t\t', len(self.pos2files))
 			print(' \t- dep triples:\t\t', len(self.dependency2files))
 		elif not ckpts_loading and not ckpts_cleaning and not ckpts_validation and not ckpts_relations_handler and not ckpts_mapping:
 			self.loadData()
-			self.createCheckpoint('loading', (self.dygiepp2files, self.openie2files, self.pos2files, self.dependency2files, self.entities2files))
+			self.createCheckpoint('loading', (self.dygiepp2files, self.llm2files, self.openie2files, self.pos2files, self.dependency2files, self.entities2files))
 			print(' \t- dygiepp triples:\t', len(self.dygiepp2files))
+			print(' \t- llm2files triples:\t', len(self.llm2files))
 			print(' \t- openie triples:\t', len(self.openie2files))
 			print(' \t- pos triples:\t\t', len(self.pos2files))
 			print(' \t- dep triples:\t\t', len(self.dependency2files))
