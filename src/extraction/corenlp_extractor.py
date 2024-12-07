@@ -405,9 +405,12 @@ def manageEntitiesAndDygieepRelations(dygiepp, llm,  cso_topics):
 		for (x, xtype) in llm[sentence]['entities']:
 			llm_e2type[x] = xtype
 
+	print('dygiepp_entities : ' + str(len(dygiepp_entities)) )
+	print('dygiepp_entities : ' + str(len(llm_entities)))
 	entities = dygiepp_entities + llm_entities + cso_topics
-	llm_e2type.update(dygiepp_e2type)
-	e2type = llm_e2type
+	dygiepp_e2type.update(llm_e2type)
+	e2type = dygiepp_e2type
+	print('number of entities:  ' + str(len(e2type)))
 
 	acronyms = detectAcronyms(entities)
 	for e in entities:
@@ -491,7 +494,7 @@ def extraction(filename):
 	fw.close()
 
 
-def extraction(filename,llm):
+def extraction(filename,booleanArgument=False):
 	if filename[-5:] != '.json':
 		return
 
@@ -516,7 +519,7 @@ def extraction(filename,llm):
 	f.close()
 
 	paper2llm = {}
-	if llm:
+	if booleanArgument==True:
 		print('> processing: ' + filename + ' Llm annotation')
 		f = open(llm_output_dump_dir + filename, 'r')
 		for row in f:
@@ -556,9 +559,9 @@ def extraction(filename,llm):
 	fw.close()
 
 if __name__ == '__main__':
-
-	if len(sys.argv) == 1:
-		importLLMData = sys.argv[1]
+	print(len(sys.argv))
+	if len(sys.argv) == 3:
+		importLLMData = sys.argv[2]
 
 	else:
 		print('> python corenlp_extractor.py importLLMout')
