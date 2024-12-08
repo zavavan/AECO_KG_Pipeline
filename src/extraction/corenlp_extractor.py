@@ -387,6 +387,7 @@ def getDependencyTriples(corenlp_out, dygiepp, cso_topics):
 # this is used to map entities to acronyms and prepare the list of relations of each file that can be saved
 # similarly to the other extractor tools
 def manageEntitiesAndDygieepRelations(dygiepp, llm,  cso_topics):
+	print('I am here')
 	dygiepp_entities = []
 	llm_entities = []
 	dygiepp_e2type = {}
@@ -462,7 +463,6 @@ def extraction(filename):
 		paper2llm[drow['doc_key']] = getLlmResults(drow)
 	f.close()
 
-
 	nlp = StanfordCoreNLP('http://localhost', port=9050)
 	paper2openie = {}
 	print('> processing: ' + filename + ' core nlp extraction')
@@ -476,6 +476,7 @@ def extraction(filename):
 				openie_triples = getOpenieTriples(corenlp_out, paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'])
 				pos_triples = getPosTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'])
 				dependency_triples = getDependencyTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] + paper2metadata[paper_id]['cso_syntactic_topics'])
+				print('Here!')
 				entities, dygiepp_triples, llm_triples = manageEntitiesAndDygieepRelations(paper2dygiepp[paper_id],paper2llm[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'])
 
 				data_input_for_dygepp = json.dump({
@@ -527,7 +528,7 @@ def extraction(filename,booleanArgument=False):
 			paper2llm[drow['doc_key']] = getLlmResults(drow)
 		f.close()
 
-
+	print('number of dygiepp papers : ' + str(paper2dygiepp))
 	nlp = StanfordCoreNLP('http://localhost', port=9050)
 	paper2openie = {}
 	print('> processing: ' + filename + ' core nlp extraction')
@@ -541,7 +542,7 @@ def extraction(filename,booleanArgument=False):
 				openie_triples = getOpenieTriples(corenlp_out, paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'])
 				pos_triples = getPosTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'])
 				dependency_triples = getDependencyTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] + paper2metadata[paper_id]['cso_syntactic_topics'])
-				entities, dygiepp_triples, llm_triples = manageEntitiesAndDygieepRelations(paper2dygiepp[paper_id],paper2llm[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'])
+				entities, dygiepp_triples, llm_triples = manageEntitiesAndDygieepRelations(paper2dygiepp[paper_id],paper2llm[paper_id] if paper_id in paper2llm.keys() else dict(), paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'])
 
 				data_input_for_dygepp = json.dump({
 						'doc_key' : str(paper_id),

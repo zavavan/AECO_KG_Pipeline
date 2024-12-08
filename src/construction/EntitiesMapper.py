@@ -19,6 +19,9 @@ import csv
 import os
 
 
+
+
+
 class EntitiesMapper:
 	def __init__(self, entities, all_pairs):
 		self.entities = entities 
@@ -28,6 +31,7 @@ class EntitiesMapper:
 		self.e2alternativeLabels = {}
 		self.all_pairs = all_pairs
 		self.e2neighbors = {}
+		self.aecoWikidataMapping = {}
 
 		self.cso_map = {}
 		self.dbpedia_map = {}
@@ -35,6 +39,7 @@ class EntitiesMapper:
 		self.g = nx.Graph()
 
 		self.csoResourcePath = '../../resources/CSO.3.1.csv'
+		self.aecoResourcePath = '../../resources/AECO_domain_label_mapping.json'
 		self.mappedTriples = {} # main output of this class
 
 
@@ -176,6 +181,13 @@ class EntitiesMapper:
 		print('> Mapped to Wikidata:', len(self.e2wikidata))
 		print(self.e2wikidata)
 
+	def build_aeco_ent_wikidata_map(self):
+
+		with open(self.aecoResourcePath, 'r') as file:
+			data = json.load(file)
+
+		self.aecoWikidataMapping = data
+
 	def linkThroughWikidataForAECO(self):
 		print('- \t >> Mapping with wikidata started')
 		timepoint = time.time()
@@ -183,6 +195,9 @@ class EntitiesMapper:
 		entities_to_explore = list(set(self.entities) - set(self.e2wikidata.keys()))
 		if len(entities_to_explore) <= 0:
 			return
+
+		### build the total mapping {label:wikidataresource} for the AECO domain:
+		self.build_aeco_ent_wikidata_map()
 
 		# print('sorting entities...')
 		entities_to_explore = sorted(entities_to_explore, key=lambda x: len(x), reverse=True)
@@ -192,103 +207,22 @@ class EntitiesMapper:
 
 		while c < len(entities_to_explore):
 			e = entities_to_explore[c]
+			if e not in self.e2wikidata and (e in self.aecoWikidataMapping or e.lower() in self.aecoWikidataMapping):
+				self.e2wikidata[e] = self.aecoWikidataMapping[e]
 
-			query = """
-					SELECT DISTINCT ?entity ?altLabel
-					WHERE{
-							{
-								?entity  <http://www.w3.org/2000/01/rdf-schema#label> \"""" + e + """\"@en .
-								{?entity wdt:31+ wd:Q12271 }  UNION 
-								{?entity wdt:31/wdt:P279* wd:Q12271} UNION
-								{?entity wdt:P279+ wd:Q12271} UNION
-								{?entity  wdt:P361+ wd:Q12271} UNION
-								{ ?entity  wdt:P1269+ wd:Q12271} UNION
-								{?entity wdt:31+ wd:Q11023 }  UNION 
-								{?entity wdt:31/wdt:P279* wd:Q11023} UNION
-								{?entity wdt:P279+ wd:Q11023} UNION
-								{?entity  wdt:P361+ wd:Q11023} UNION
-								{ ?entity  wdt:P1269+ wd:Q11023} UNION
-								{FILTER NOT EXISTS {?entity <http://schema.org/description> "Wikimedia disambiguation page"@en}}
-								 OPTIONAL {
-									?entity <http://www.w3.org/2004/02/skos/core#altLabel> ?altLabel .
-									FILTER(LANG(?altLabel) = 'en')
-								}
-
-
-							}  UNION {
-								?entity <http://www.w3.org/2004/02/skos/core#altLabel> \"""" + e + """\"@en .
-								{?entity wdt:31+ wd:Q12271 }  UNION 
-								{?entity wdt:31/wdt:P279* wd:Q12271} UNION
-								{?entity wdt:P279+ wd:Q12271} UNION
-								{?entity  wdt:P361+ wd:Q12271} UNION
-								{ ?entity  wdt:P1269+ wd:Q12271} UNION
-								{?entity wdt:31+ wd:Q11023 }  UNION 
-								{?entity wdt:31/wdt:P279* wd:Q11023} UNION
-								{?entity wdt:P279+ wd:Q11023} UNION
-								{?entity  wdt:P361+ wd:Q11023} UNION
-								{ ?entity  wdt:P1269+ wd:Q11023} UNION
-								 OPTIONAL {
-									?entity <http://www.w3.org/2004/02/skos/core#altLabel> ?altLabel .
-									FILTER(LANG(?altLabel) = 'en')
-								}
-								SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
-
-							}
-						}
-					"""
-
-			url = 'https://query.wikidata.org/sparql'
-			data = urllib.parse.urlencode({'query': query}).encode()
-			headers = {"Accept": "application/sparql-results+json"}
-			# print(e)
-			try:
-				req = urllib.request.Request(url, data=data, headers=headers)
-				response = urllib.request.urlopen(req)
-
-				if response.status == 200:
-
-					result = response.read().decode('ascii', errors='ignore')
-					jresponse = json.loads(result)
-					variables = jresponse['head']['vars']
-					for binding in jresponse['results']['bindings']:
-
-						if 'entity' in binding and e not in self.e2wikidata:
-							if 'http://www.wikidata.org/entity/Q' in binding['entity']['value']:  # no wikidata:PXYZ
-								self.e2wikidata[e] = binding['entity']['value']
-						# print('>    ', binding['entity']['value'])
-
-						if 'altLabel' in binding:
-							if binding['altLabel']['value'].lower() in entities_to_explore and binding['altLabel'][
-								'value'].lower() not in self.e2wikidata:
-								if 'http://www.wikidata.org/entity/Q' in binding['entity']['value']:
-									self.e2wikidata[binding['altLabel']['value'].lower()] = binding['entity']['value']
-							# print('>    alt', binding['altLabel']['value'].lower(), binding['entity']['value'])
-
-				c += 1
-				if c % 100 == 0:
-					print('\t >> Wikidata Processed', c, 'entities in {:.2f} secs.'.format(time.time() - timepoint))
-					pickle_out = open("../../resources/e2wikidata.pickle", "wb")
-					pickle.dump(self.e2wikidata, pickle_out)
-					pickle_out.flush()
-					pickle_out.close()
-			# print('- \t >> Saving', len(self.e2wikidata), 'mappings')
-			# raise urllib.error.HTTPError(req.full_url, '100', 'ciao', {'pippo':'pippo'}, fp=None)
-
-			except urllib.error.HTTPError as err:
-				# Return code error (e.g. 404, 501, ...)
-				# print('Error 409', response.headers)
-				print(err)
-				# print('HTTPError: {}'.format(ex.code))
-				print(err.headers)
-				print('sleeping...')
-				time.sleep(60)
-			except Exception as ex:
-				print(ex)
+			c += 1
+			if c % 100 == 0:
+				print('\t >> Wikidata Processed', c, 'entities in {:.2f} secs.'.format(time.time() - timepoint))
+				pickle_out = open("../../resources/e2wikidata.pickle", "wb")
+				pickle.dump(self.e2wikidata, pickle_out)
+				pickle_out.flush()
+				pickle_out.close()
 
 		pickle_out = open("../../resources/e2wikidata.pickle", "wb")
 		pickle.dump(self.e2wikidata, pickle_out)
 		pickle_out.close()
 		print('> Mapped to Wikidata:', len(self.e2wikidata))
+		print(self.e2wikidata)
 
 
 	def findNeiighbors(self):
@@ -401,7 +335,7 @@ class EntitiesMapper:
 	def load(self):
 
 		p_cso = Process(target=self.linkThroughCSO)
-		p_wikidata = Process(target=self.linkThroughWikidataForAECO)
+		p_wikidata = Process(target=self.linkThroughWikidataForAECO())
 		p_dbpedia = Process(target=self.linkThroughDBpediaSpotLight)
 
 		if os.path.exists("../../resources/e2cso.pickle"):
