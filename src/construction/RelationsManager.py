@@ -9,8 +9,9 @@ import csv
 class RelationsManager:
 
 
-	def __init__(self, dygieep_relations2files, stanfordcore_pos_relations2files, stanfordcore_openie_relations2files, stanfordcore_dep_relations2files):
+	def __init__(self, dygieep_relations2files, llm_relations2files, stanfordcore_pos_relations2files, stanfordcore_openie_relations2files, stanfordcore_dep_relations2files):
 		self.dygieep_relations2files = dygieep_relations2files
+		self.llm_relations2files = llm_relations2files
 		self.stanfordcore_pos_relations2files = stanfordcore_pos_relations2files
 		self.stanfordcore_openie_relations2files = stanfordcore_openie_relations2files
 		self.stanfordcore_dep_relations2files = stanfordcore_dep_relations2files
@@ -19,6 +20,7 @@ class RelationsManager:
 		self.verb_map = {}
 
 		self.dygiepp_pair2info = {}
+		self.llm_pair2info = {}
 		self.pos_pair2info = {}
 		self.openie_pair2info = {}
 		self.dep_pair2info = {}
@@ -106,7 +108,7 @@ class RelationsManager:
 		
 
 	def get(self):
-		return self.dygiepp_pair2info, self.pos_pair2info, self.openie_pair2info, self.dep_pair2info
+		return self.dygiepp_pair2info, self.llm_pair2info, self.pos_pair2info, self.openie_pair2info, self.dep_pair2info
 		
 
 

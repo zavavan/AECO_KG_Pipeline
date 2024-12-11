@@ -160,10 +160,12 @@ def getLlmResults(dresult):
 			if len(rel[0].split())>7 or len(rel[2].split())>7:
 				entRel['relations'].remove(rel)
 
-	print(f"Imported {added_ent_count} entities from LLM")
-	print(f"Imported {added_rel_count} relations from LLM")
-	print(f"Discarded {discarded_ent_count} long entities from LLM")
-	print(f"Discarded {discarded_rel_count} relations connecting long entities from LLM")
+	#print(f"Imported {added_ent_count} entities from LLM")
+	#print(f"Imported {added_rel_count} relations from LLM")
+	if discarded_ent_count > 0:
+		print(f"Discarded {discarded_ent_count} long entities from LLM")
+	if discarded_rel_count > 0:
+		print(f"Discarded {discarded_rel_count} relations connecting long entities from LLM")
 
 	return sentence2data
 
@@ -388,7 +390,6 @@ def getDependencyTriples(corenlp_out, dygiepp, cso_topics):
 # this is used to map entities to acronyms and prepare the list of relations of each file that can be saved
 # similarly to the other extractor tools
 def manageEntitiesAndDygieepRelations(dygiepp, llm,  cso_topics):
-	print('I am here')
 	dygiepp_entities = []
 	llm_entities = []
 	dygiepp_e2type = {}
@@ -408,11 +409,15 @@ def manageEntitiesAndDygieepRelations(dygiepp, llm,  cso_topics):
 			llm_e2type[x] = xtype
 
 	print('dygiepp_entities : ' + str(len(dygiepp_entities)) )
-	print('dygiepp_entities : ' + str(len(llm_entities)))
+	print('llm_entities : ' + str(len(llm_entities)))
 	entities = dygiepp_entities + llm_entities + cso_topics
+	dygiepp_ent_num = len(dygiepp_e2type)
+
 	dygiepp_e2type.update(llm_e2type)
+
+	print('added llm entities =  ' + str(len(dygiepp_e2type) - dygiepp_ent_num))
 	e2type = dygiepp_e2type
-	print('number of entities:  ' + str(len(e2type)))
+
 
 	acronyms = detectAcronyms(entities)
 	for e in entities:
@@ -429,7 +434,7 @@ def manageEntitiesAndDygieepRelations(dygiepp, llm,  cso_topics):
 		ok_relations_llm += [(mapEntityAcronyms(acronyms, s), p, mapEntityAcronyms(acronyms, o)) for (s,p,o) in llm[sentence]['relations']]
 
 
-	return list(set(ok_entities)), list(set(ok_relations_dygiepp)), list(set(ok_relations_llm))
+	return list(ok_entities), list(set(ok_relations_dygiepp)), list(set(ok_relations_llm))
 
 
 def extraction(filename):
@@ -529,12 +534,13 @@ def extraction(filename,booleanArgument):
 			paper2llm[drow['doc_key']] = getLlmResults(drow)
 		f.close()
 
-	print('number of dygiepp papers : ' + str(paper2dygiepp))
+	print('number of dygiepp papers : ' + str(len(paper2dygiepp)))
+	print('number of llm papers : ' + str(len(paper2llm)))
 	nlp = StanfordCoreNLP('http://localhost', port=9050)
 	paper2openie = {}
 	print('> processing: ' + filename + ' core nlp extraction')
 	for index,paper_id in enumerate(tqdm(paper2metadata.keys(), total=len(paper2metadata.keys()), desc="Processing articles in the dataset:")):
-		if paper_id in paper2dygiepp:
+		if paper_id in paper2dygiepp and paper_id in paper2llm:
 			corenlp_out = {}
 			props = {'annotators': 'openie,tokenize,pos,depparse', 'pipelineLanguage': 'en', 'outputFormat': 'json'}
 			try:
@@ -543,7 +549,7 @@ def extraction(filename,booleanArgument):
 				openie_triples = getOpenieTriples(corenlp_out, paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'])
 				pos_triples = getPosTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'])
 				dependency_triples = getDependencyTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] + paper2metadata[paper_id]['cso_syntactic_topics'])
-				entities, dygiepp_triples, llm_triples = manageEntitiesAndDygieepRelations(paper2dygiepp[paper_id],paper2llm[paper_id] if paper_id in paper2llm.keys() else dict(), paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'])
+				entities, dygiepp_triples, llm_triples = manageEntitiesAndDygieepRelations(paper2dygiepp[paper_id],paper2llm[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] + paper2metadata[paper_id]['cso_syntactic_topics'])
 
 				data_input_for_dygepp = json.dump({
 						'doc_key' : str(paper_id),

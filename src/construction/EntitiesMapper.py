@@ -182,7 +182,7 @@ class EntitiesMapper:
 		print(self.e2wikidata)
 
 	def build_aeco_ent_wikidata_map(self):
-
+		print('loading the aeco_ent_wikidata_map: ')
 		with open(self.aecoResourcePath, 'r') as file:
 			data = json.load(file)
 
