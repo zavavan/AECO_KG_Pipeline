@@ -114,6 +114,7 @@ def getDygieppResults(dresult):
 
 
 def getLlmResults(dresult):
+	print(dresult['doc_key'])
 	sentences = dresult['sentences']
 	#print('num sentences: ' + str(len(sentences)))
 	dner = dresult['predicted_ner']
@@ -156,7 +157,7 @@ def getLlmResults(dresult):
 	discarded_rel_count = 0
 	for i,entRel in sentence2data.items():
 		for rel in entRel['relations']:
-			if len(rel[0]).split()>7 or len(rel[2]).split()>7:
+			if len(rel[0].split())>7 or len(rel[2].split())>7:
 				entRel['relations'].remove(rel)
 
 	print(f"Imported {added_ent_count} entities from LLM")
@@ -495,7 +496,7 @@ def extraction(filename):
 	fw.close()
 
 
-def extraction(filename,booleanArgument=False):
+def extraction(filename,booleanArgument):
 	if filename[-5:] != '.json':
 		return
 
@@ -520,7 +521,7 @@ def extraction(filename,booleanArgument=False):
 	f.close()
 
 	paper2llm = {}
-	if booleanArgument==True:
+	if booleanArgument:
 		print('> processing: ' + filename + ' Llm annotation')
 		f = open(llm_output_dump_dir + filename, 'r')
 		for row in f:
@@ -568,7 +569,10 @@ if __name__ == '__main__':
 		print('> python corenlp_extractor.py importLLMout')
 		exit(1)
 	# Use functools.partial to fix the second argument
-	extraction_with_bool = partial(extraction, booleanArgument=importLLMData)
+
+	print(importLLMData)
+	boolean_value = importLLMData == "True"
+	extraction_with_bool = partial(extraction, booleanArgument=boolean_value)
 
 
 	files_to_parse = [filename for filename in os.listdir(dataset_dump_dir)]
