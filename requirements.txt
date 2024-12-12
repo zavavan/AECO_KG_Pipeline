@@ -9,3 +9,4 @@ django
 statsmodels
 tdqm
 jsonlines
+ijson
