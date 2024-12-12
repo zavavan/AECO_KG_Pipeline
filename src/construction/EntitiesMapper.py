@@ -18,8 +18,7 @@ import time
 import csv
 import os
 
-
-
+from tqdm import tqdm
 
 
 class EntitiesMapper:
@@ -266,7 +265,7 @@ class EntitiesMapper:
 
 		c = 0
 		timepoint = time.time()
-		for e in entities_to_explore:
+		for e in tqdm(entities_to_explore, total=len(entities_to_explore)):
 			if e not in self.e2dbpedia:
 				neighbors = self.e2neighbors[e]
 
@@ -311,9 +310,65 @@ class EntitiesMapper:
 		pickle.dump(self.e2dbpedia, pickle_out)
 		pickle_out.close()
 		print('- \t >> Mapped to DBpedia:', len(self.e2dbpedia))
-		
 
-	'''def save(self):
+	def linkThroughLocalDBpediaSpotLight(self):
+		print('- \t >> Mapping with dbpedia started')
+
+		entities_to_explore = set(self.entities) - set(self.e2dbpedia.keys())
+		if len(entities_to_explore) <= 0:
+			return
+		'''
+		self.findNeiighbors()
+
+		c = 0
+		timepoint = time.time()
+		for e in tqdm(entities_to_explore, total=len(entities_to_explore)):
+			if e not in self.e2dbpedia:
+				neighbors = self.e2neighbors[e]
+
+				# content = [e] + [self.id2e[nid] for nid in neighbors_ids[:20]]
+				content = [e] + neighbors
+				shuffle(content)
+				content = ' '.join(content)
+
+				url = "http://localhost:2222/rest/annotate"
+				data = urllib.parse.urlencode({'text': content})
+				headers = {"Accept": "application/json"}
+
+				try:
+					req = urllib.request.Request(url + '?' + data, headers=headers)
+					response = urllib.request.urlopen(req)
+					if response.status == 200:
+
+						result = response.read().decode('ascii', errors='ignore')
+						jresponse = json.loads(result)
+
+						if 'Resources' in jresponse:
+							for resource in jresponse['Resources']:
+								if resource['@surfaceForm'] == e and float(resource['@similarityScore']) >= 0.8:
+									self.e2dbpedia[e] = resource['@URI']
+									break
+
+				except urllib.error.HTTPError as e:
+					print('HTTPError: {}'.format(e.code), 'sleeping...')
+					time.sleep(60)
+				except:
+					print('E:', e)
+					pass
+
+				c += 1
+				if c % 10000 == 0:
+					print('- \t>> DBpedia Processed', c, 'entities in', (time.time() - timepoint), 'secs')
+					pickle_out = open("../../resources/e2dbpedia.pickle", "wb")
+					pickle.dump(self.e2dbpedia, pickle_out)
+					pickle_out.close()
+		'''
+		pickle_out = open("../../resources/e2dbpedia.pickle", "wb")
+		pickle.dump(self.e2dbpedia, pickle_out)
+		pickle_out.close()
+		print('- \t >> Mapped to DBpedia:', len(self.e2dbpedia))
+
+	def save(self):
 
 		pickle_out = open("../../resources/e2cso.pickle","wb")
 		pickle.dump(self.e2cso, pickle_out)
@@ -330,13 +385,13 @@ class EntitiesMapper:
 		pickle_out = open("../../resources/e2alternativeLabels.pickle","wb")
 		pickle.dump(self.e2alternativeLabels, pickle_out)
 		pickle_out.close()
-	'''
+
 
 	def load(self):
 
 		p_cso = Process(target=self.linkThroughCSO)
 		p_wikidata = Process(target=self.linkThroughWikidataForAECO())
-		p_dbpedia = Process(target=self.linkThroughDBpediaSpotLight)
+		p_dbpedia = Process(target=self.linkThroughLocalDBpediaSpotLight)
 
 		if os.path.exists("../../resources/e2cso.pickle"):
 			f = open("../../resources/e2cso.pickle","rb")
