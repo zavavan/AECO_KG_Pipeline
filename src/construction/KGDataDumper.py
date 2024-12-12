@@ -9,9 +9,10 @@ import csv
 import os
 
 class KGDataDumper:
-	def __init__(self, dygiepp_pair2info, pos_pair2info, openie_pair2info, dep_pair2info, e2cso, e2dbpedia, e2wikidata, e2type):
+	def __init__(self, dygiepp_pair2info, llm_pair2info, pos_pair2info, openie_pair2info, dep_pair2info, e2cso, e2dbpedia, e2wikidata, e2type):
 
 		self.dygiepp_pair2info = dygiepp_pair2info
+		self.llm_pair2info = llm_pair2info
 		self.pos_pair2info = pos_pair2info
 		self.openie_pair2info = openie_pair2info
 		self.dep_pair2info = dep_pair2info
@@ -31,7 +32,7 @@ class KGDataDumper:
 		self.triples_csv_filename = './cskg_data/cskg_triples.csv'
 
 	def collectInfo(self):
-		pairs = set(self.dygiepp_pair2info.keys()) | set(self.pos_pair2info.keys()) | set(self.openie_pair2info.keys()) | set(self.dep_pair2info.keys())
+		pairs = set(self.dygiepp_pair2info.keys()) | set(self.llm_pair2info.keys()) | set(self.pos_pair2info.keys()) | set(self.openie_pair2info.keys()) | set(self.dep_pair2info.keys())
 		
 		for (s,o) in pairs:
 			if (s,o) not in self.pair2info:
@@ -45,6 +46,16 @@ class KGDataDumper:
 					else:
 						self.pair2info[(s,o)][rel]['files'] += list(self.dygiepp_pair2info[(s,o)][rel])
 						self.pair2info[(s,o)][rel]['source'] += ['dygiepp']
+
+
+			if (s,o) in self.llm_pair2info.keys():
+				for rel in self.llm_pair2info[(s,o)]:
+					if rel not in self.pair2info[(s,o)]:
+						self.pair2info[(s,o)][rel] = {'files' : list(self.llm_pair2info[(s,o)][rel])}
+						self.pair2info[(s,o)][rel]['source'] = ['llm']
+					else:
+						self.pair2info[(s,o)][rel]['files'] += list(self.llm_pair2info[(s,o)][rel])
+						self.pair2info[(s,o)][rel]['source'] += ['lmm']
 
 			if (s,o) in self.pos_pair2info.keys():
 				for rel in self.pos_pair2info[(s,o)]:

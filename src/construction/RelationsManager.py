@@ -43,6 +43,15 @@ class RelationsManager:
 
 		self.dygiepp_pair2info = pairs
 
+	def bestLabelLlm(self):
+		pairs = {}
+		for (s,p,o), files in self.llm_relations2files.items():
+			if (s,o) not in pairs:
+				pairs[(s,o)] = {}
+				pairs[(s,o)][p] = files
+
+		self.llm_pair2info = pairs
+
 
 	def mapVerbRelations(self, verb_relations2files):
 		new_verb_relations2files = {}
@@ -69,11 +78,29 @@ class RelationsManager:
 
 	
 
-	def mapDygieppRelations(self):
-		dygieep_relations2files = {}
+	def mapLlmRelations(self):
+		llm_relations2files = {}
 		
 		# the mapping of dygiepp is done accordingly to the mapping defined by AIKG_VerbNet_verb_map.csv 
-		for (s,p,o), files in self.dygieep_relations2files.items():
+		for (s,p,o), files in self.llm_relations2files.items():
+			if p == 'USED-FOR':
+				llm_relations2files[(o, 'uses', s)] = files
+			elif p == 'FEATURE-OF' or p == 'PART-OF':
+				llm_relations2files[(o, 'includes', s)] = files
+			elif p == 'EVALUATE-FOR':
+				llm_relations2files[(s, 'analyzes', o)] = files
+			elif p == 'HYPONYM-OF':
+				llm_relations2files[(s, 'skos:broader/is/hyponym-of', o)] = files
+			elif p == 'COMPARE':
+				llm_relations2files[(s,'matches',o)] = files
+
+		self.llm_relations2files = llm_relations2files
+
+	def mapDygieppRelations(self):
+		dygieep_relations2files = {}
+
+		# the mapping of dygiepp is done accordingly to the mapping defined by AIKG_VerbNet_verb_map.csv
+		for (s, p, o), files in self.dygieep_relations2files.items():
 			if p == 'USED-FOR':
 				dygieep_relations2files[(o, 'uses', s)] = files
 			elif p == 'FEATURE-OF' or p == 'PART-OF':
@@ -83,11 +110,9 @@ class RelationsManager:
 			elif p == 'HYPONYM-OF':
 				dygieep_relations2files[(s, 'skos:broader/is/hyponym-of', o)] = files
 			elif p == 'COMPARE':
-				dygieep_relations2files[(s,'matches',o)] = files
+				dygieep_relations2files[(s, 'matches', o)] = files
 
 		self.dygieep_relations2files = dygieep_relations2files
-
-
 
 	def run(self):
 		start = time.time()
@@ -104,6 +129,8 @@ class RelationsManager:
 
 		self.mapDygieppRelations()
 		self.bestLabelDygiepp()
+		self.mapLlmRelations()
+		self.bestLabelLlm()
 				
 		
 

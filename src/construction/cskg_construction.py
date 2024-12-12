@@ -81,6 +81,7 @@ class TriplesGenerator:
 		self.entities2files = tmp_entities2files
 
 		self.dygiepp2files = self.applyCleanerMap(self.dygiepp2files, cleaner_map)
+		self.llm2files = self.applyCleanerMap(self.llm2files, cleaner_map)
 		self.pos2files = self.applyCleanerMap(self.pos2files, cleaner_map)
 		self.openie2files = self.applyCleanerMap(self.openie2files, cleaner_map)
 		self.dependency2files = self.applyCleanerMap(self.dependency2files, cleaner_map)
@@ -111,6 +112,7 @@ class TriplesGenerator:
 		self.entities2files = tmp_entities2files
 
 		self.dygiepp2files = self.applyValidEntities(validEntities, self.dygiepp2files)
+		self.llm2files = self.applyValidEntities(validEntities, self.llm2files)
 		self.openie2files = self.applyValidEntities(validEntities, self.openie2files)
 		self.pos2files = self.applyValidEntities(validEntities, self.pos2files)
 		self.dependency2files = self.applyValidEntities(validEntities, self.dependency2files)
@@ -156,7 +158,7 @@ class TriplesGenerator:
 
 	def entitiesFreq(self, cut_freq):
 		e2count = {}
-		for data_dict in [self.dygiepp_pair2info, self.openie_pair2info, self.pos_pair2info, self.dep_pair2info]:
+		for data_dict in [self.dygiepp_pair2info, self.llm_pair2info,  self.openie_pair2info, self.pos_pair2info, self.dep_pair2info]:
 			for (s,o) in data_dict:
 				if s not in e2count: e2count[s] = 0
 				if o not in e2count: e2count[o] = 0
@@ -203,7 +205,7 @@ class TriplesGenerator:
 			self.loadData()
 			self.createCheckpoint('loading', (self.dygiepp2files, self.llm2files, self.openie2files, self.pos2files, self.dependency2files, self.entities2files))
 			print(' \t- dygiepp triples:\t', len(self.dygiepp2files))
-			print(' \t- llm2files triples:\t', len(self.llm2files))
+			print(' \t- llm triples:\t', len(self.llm2files))
 			print(' \t- openie triples:\t', len(self.openie2files))
 			print(' \t- pos triples:\t\t', len(self.pos2files))
 			print(' \t- dep triples:\t\t', len(self.dependency2files))
@@ -277,7 +279,7 @@ class TriplesGenerator:
 		elif not ckpts_relations_handler and not ckpts_mapping:
 			rm = RelationsManager(self.dygiepp2files, self.llm2files, self.pos2files, self.openie2files, self.dependency2files)
 			rm.run()
-			self.dygiepp_pair2info, self.f, self.pos_pair2info, self.openie_pair2info, self.dep_pair2info = rm.get()
+			self.dygiepp_pair2info, self.llm_pair2info, self.f, self.pos_pair2info, self.openie_pair2info, self.dep_pair2info = rm.get()
 			del rm
 			del self.dygiepp2files
 			del self.llm2files
