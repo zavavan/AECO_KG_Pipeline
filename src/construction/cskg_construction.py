@@ -279,7 +279,7 @@ class TriplesGenerator:
 		elif not ckpts_relations_handler and not ckpts_mapping:
 			rm = RelationsManager(self.dygiepp2files, self.llm2files, self.pos2files, self.openie2files, self.dependency2files)
 			rm.run()
-			self.dygiepp_pair2info, self.llm_pair2info, self.f, self.pos_pair2info, self.openie_pair2info, self.dep_pair2info = rm.get()
+			self.dygiepp_pair2info, self.llm_pair2info, self.pos_pair2info, self.openie_pair2info, self.dep_pair2info = rm.get()
 			del rm
 			del self.dygiepp2files
 			del self.llm2files
