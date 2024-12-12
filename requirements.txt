@@ -7,3 +7,5 @@ sentence_transformers
 SPARQLWrapper
 django
 statsmodels
+tdqm
+jsonlines
