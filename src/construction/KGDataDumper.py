@@ -55,7 +55,7 @@ class KGDataDumper:
 						self.pair2info[(s,o)][rel]['source'] = ['llm']
 					else:
 						self.pair2info[(s,o)][rel]['files'] += list(self.llm_pair2info[(s,o)][rel])
-						self.pair2info[(s,o)][rel]['source'] += ['lmm']
+						self.pair2info[(s,o)][rel]['source'] += ['llm']
 
 			if (s,o) in self.pos_pair2info.keys():
 				for rel in self.pos_pair2info[(s,o)]:
@@ -165,6 +165,7 @@ class KGDataDumper:
 				self.label2cskg_entity[label] = cskg_entity
 			self.cskg2wikidata[cskg_entity] = wde
 
+		print(self.label2cskg_entity)
 
 	# function used by mergeEntitiesEuristic
 	def mergeEntitiesEmbeddings(self, model, entities):

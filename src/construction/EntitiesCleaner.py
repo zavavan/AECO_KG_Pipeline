@@ -36,6 +36,8 @@ class EntitiesCleaner:
 					e_fixed = e_fixed.lower()
 					
 					self.entity2cleaned_entity[e] = e_fixed
+		print('self.entity2cleaned_entity')
+		print(self.entity2cleaned_entity[e])
 
 	def lemmatize(self):
 		wnl = nltk.stem.WordNetLemmatizer()

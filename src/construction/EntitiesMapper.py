@@ -185,6 +185,12 @@ class EntitiesMapper:
 		with open(self.aecoResourcePath, 'r') as file:
 			data = json.load(file)
 
+		data_lower = dict()
+		for k,v in data.items():
+			data_lower[k.lower()]=v
+
+		data.update(data_lower)
+
 		self.aecoWikidataMapping = data
 
 	def linkThroughWikidataForAECO(self):
@@ -206,7 +212,7 @@ class EntitiesMapper:
 
 		while c < len(entities_to_explore):
 			e = entities_to_explore[c]
-			if e not in self.e2wikidata and (e in self.aecoWikidataMapping or e.lower() in self.aecoWikidataMapping):
+			if e not in self.e2wikidata and e in self.aecoWikidataMapping:
 				self.e2wikidata[e] = self.aecoWikidataMapping[e]
 
 			c += 1
