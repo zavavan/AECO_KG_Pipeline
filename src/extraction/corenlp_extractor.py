@@ -67,7 +67,7 @@ def mapEntityAcronyms(acronyms, e):
 def detectAcronyms(elist):
 	acronyms = {}
 	regex_acronym = re.compile("\(.*")
-
+	## building integrated photovoltaic (BIPV)
 	for e in elist:
 		e_cleaned_without_acr = regex_acronym.sub('', e).strip().lower()
 		base_acronym = ''.join([token[0] for token in nltk.word_tokenize(e_cleaned_without_acr)])
@@ -78,6 +78,19 @@ def detectAcronyms(elist):
 				acronyms[e] = e_cleaned_without_acr
 	return acronyms
 
+
+def detectAcronymsLenient(elist):
+	acronyms = {}
+	regex_acronym = re.compile("\(.*")
+	## building integrated photovoltaic (BIPV)
+	for e in elist:
+		e_cleaned_without_acr = regex_acronym.sub('', e).strip().lower()
+		base_acronym = ''.join([token[0] for token in nltk.word_tokenize(e_cleaned_without_acr)])
+		potential_acrs = [ acr.replace('( ', '').replace(' )', '').replace('(', '').replace(')', '').lower()  for acr in regex_acronym.findall(e)]
+		for acr in potential_acrs:
+			acronyms[acr] = e_cleaned_without_acr
+			acronyms[e] = e_cleaned_without_acr
+	return acronyms
 
 def getDygieppResults(dresult):
 	sentences = dresult['sentences']
@@ -209,7 +222,7 @@ def getOpenieTriples(corenlp_out, dygiepp, cso_topics):
 		if i < len(dygiepp.keys()):
 			dygiepp_sentence_entities = [x for (x, xtype) in dygiepp[i]['entities']]
 			#print(dygiepp_sentence_entities)
-		acronyms = detectAcronyms(dygiepp_sentence_entities + cso_topics)
+		acronyms = detectAcronymsLenient(dygiepp_sentence_entities + cso_topics)
 
 		for el in openie:
 			#print(el)
@@ -260,7 +273,7 @@ def getPosTriples(corenlp_out, dygiepp, cso_topics):
 
 		if i < len(dygiepp.keys()):
 			dygiepp_sentence_entities = [x for (x, xtype) in dygiepp[i]['entities']]
-		acronyms = detectAcronyms(dygiepp_sentence_entities + cso_topics)
+		acronyms = detectAcronymsLenient(dygiepp_sentence_entities + cso_topics)
 
 		entities_in_sentence = []
 		for e in set(dygiepp_sentence_entities + cso_topics):
@@ -346,7 +359,7 @@ def getDependencyTriples(corenlp_out, dygiepp, cso_topics):
 
 		if i < len(dygiepp.keys()):
 			dygiepp_sentence_entities = [x for (x, xtype) in dygiepp[i]['entities']]
-		acronyms = detectAcronyms(dygiepp_sentence_entities + cso_topics)
+		acronyms = detectAcronymsLenient(dygiepp_sentence_entities + cso_topics)
 	
 		#finidng position of entities as token numbers
 		entities_in_sentence = []
@@ -419,7 +432,10 @@ def manageEntitiesAndDygieepRelations(dygiepp, llm,  cso_topics):
 	e2type = dygiepp_e2type
 
 
-	acronyms = detectAcronyms(entities)
+	acronyms = detectAcronymsLenient(entities)
+	print('Acronyms:')
+	print(acronyms)
+
 	for e in entities:
 		if e in e2type:
 			ok_entities += [(mapEntityAcronyms(acronyms, e), e2type[e])]
