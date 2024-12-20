@@ -13,6 +13,7 @@ import ast
 import os
 import re
 from tqdm import tqdm
+import Levenshtein
 
 from functools import partial
 
@@ -79,17 +80,28 @@ def detectAcronyms(elist):
 	return acronyms
 
 
+# Function to compute similarity
+def compute_levenshtein_similarity(string1, string2):
+	# Compute the Levenshtein distance
+	distance = Levenshtein.distance(string1, string2)
+	# Normalize similarity: higher score means more similar
+	max_len = max(len(string1), len(string2))
+	similarity = 1 - (distance / max_len) if max_len > 0 else 1  # Avoid division by zero
+	return similarity
+
+
 def detectAcronymsLenient(elist):
 	acronyms = {}
-	regex_acronym = re.compile("\(.*")
+	regex_acronym = re.compile("\(.*\)")
 	## building integrated photovoltaic (BIPV)
 	for e in elist:
 		e_cleaned_without_acr = regex_acronym.sub('', e).strip().lower()
 		base_acronym = ''.join([token[0] for token in nltk.word_tokenize(e_cleaned_without_acr)])
 		potential_acrs = [ acr.replace('( ', '').replace(' )', '').replace('(', '').replace(')', '').lower()  for acr in regex_acronym.findall(e)]
 		for acr in potential_acrs:
-			acronyms[acr] = e_cleaned_without_acr
-			acronyms[e] = e_cleaned_without_acr
+			if compute_levenshtein_similarity(acr,base_acronym)> .5:
+				acronyms[acr] = e_cleaned_without_acr
+				acronyms[e] = e_cleaned_without_acr
 	return acronyms
 
 def getDygieppResults(dresult):
@@ -559,15 +571,16 @@ def extraction(filename,booleanArgument):
 	print('number of llm papers : ' + str(len(paper2llm)))
 	nlp = StanfordCoreNLP('http://localhost', port=9050)
 	paper2openie = {}
-	dygieppLlmAcronyms = {}
-	openieAcronyms = {}
-	posAcronyms = {}
-	dependencyAcronyms = {}
+
 
 	print('> processing: ' + filename + ' core nlp extraction')
 	for index,paper_id in enumerate(tqdm(paper2metadata.keys(), total=len(paper2metadata.keys()), desc="Processing articles in the dataset:")):
 		if paper_id in paper2dygiepp and paper_id in paper2llm:
 			corenlp_out = {}
+			dygieppLlmAcronyms = {}
+			openieAcronyms = {}
+			posAcronyms = {}
+			dependencyAcronyms = {}
 			props = {'annotators': 'openie,tokenize,pos,depparse', 'pipelineLanguage': 'en', 'outputFormat': 'json'}
 			try:
 				text_data = paper2metadata[paper_id]['title'].encode('utf8', 'ignore').decode('ascii', 'ignore') + '. ' + paper2metadata[paper_id]['abstract'].encode('utf8', 'ignore').decode('ascii', 'ignore')
@@ -587,13 +600,13 @@ def extraction(filename,booleanArgument):
 						'llm_triples': list(llm_triples)
 					},fw)
 				fw.write('\n')
-				fw1.write(dygieppLlmAcronyms)
+				fw1.write(str(dygieppLlmAcronyms))
 				fw1.write('\n')
-				fw1.write(openieAcronyms)
+				fw1.write(str(openieAcronyms))
 				fw1.write('\n')
-				fw1.write(posAcronyms)
+				fw1.write(str(posAcronyms))
 				fw1.write('\n')
-				fw1.write(dependencyAcronyms)
+				fw1.write(str(dependencyAcronyms))
 				fw1.write('\n')
 			except Exception as e:
 				print(e)
