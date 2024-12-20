@@ -92,16 +92,24 @@ def compute_levenshtein_similarity(string1, string2):
 
 def detectAcronymsLenient(elist):
 	acronyms = {}
-	regex_acronym = re.compile("\(.*\)")
-	## building integrated photovoltaic (BIPV)
-	for e in elist:
-		e_cleaned_without_acr = regex_acronym.sub('', e).strip().lower()
-		base_acronym = ''.join([token[0] for token in nltk.word_tokenize(e_cleaned_without_acr)])
-		potential_acrs = [ acr.replace('( ', '').replace(' )', '').replace('(', '').replace(')', '').lower()  for acr in regex_acronym.findall(e)]
-		for acr in potential_acrs:
-			if compute_levenshtein_similarity(acr,base_acronym)> .5:
-				acronyms[acr] = e_cleaned_without_acr
-				acronyms[e] = e_cleaned_without_acr
+    regex_acronym = re.compile("\(.*\)")
+    regex_acronym_followed = re.compile("(\(.*\))(.+)")
+
+    ## building integrated photovoltaic (BIPV)
+    e = "building integrated photovoltaic (BIPV) modules"
+    e_cleaned_without_acr = regex_acronym.sub('', e)
+    e_cleaned_without_acr = re.sub(r'\s+', ' ', e_cleaned_without_acr).strip().lower()
+
+    base_acronym = ''.join([token[0] for token in nltk.word_tokenize(e_cleaned_without_acr)])
+    potential_acrs = [acr.replace('( ', '').replace(' )', '').replace('(', '').replace(')', '').lower() for acr in
+                      regex_acronym.findall(e)]
+    for acr in potential_acrs:
+        if compute_levenshtein_similarity(acr, base_acronym) > .5:
+            if regex_acronym_followed.search(e):
+                acronyms[acr] = regex_acronym_followed.sub('', e).strip().lower()
+            else:
+                acronyms[acr] = e_cleaned_without_acr
+            acronyms[e] = e_cleaned_without_acr
 	return acronyms
 
 def getDygieppResults(dresult):
