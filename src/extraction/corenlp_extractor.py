@@ -213,7 +213,7 @@ def getLlmResults(dresult):
 '''
 
 
-def getOpenieTriples(corenlp_out, dygiepp, cso_topics):
+def getOpenieTriples(corenlp_out, dygiepp, cso_topics, openieacronyms):
 	relations = []
 	for i in range(len(corenlp_out['sentences'])): #sentence in corenlp_out['sentences']:
 		sentence = corenlp_out['sentences'][i]
@@ -223,6 +223,7 @@ def getOpenieTriples(corenlp_out, dygiepp, cso_topics):
 			dygiepp_sentence_entities = [x for (x, xtype) in dygiepp[i]['entities']]
 			#print(dygiepp_sentence_entities)
 		acronyms = detectAcronymsLenient(dygiepp_sentence_entities + cso_topics)
+		openieacronyms.update(acronyms)
 
 		for el in openie:
 			#print(el)
@@ -263,7 +264,7 @@ def getOpenieTriples(corenlp_out, dygiepp, cso_topics):
 	return set(relations)
 
 
-def getPosTriples(corenlp_out, dygiepp, cso_topics):
+def getPosTriples(corenlp_out, dygiepp, cso_topics, posAcronyms):
 	triples = []
 	for i in range(len(corenlp_out['sentences'])): 
 		sentence = corenlp_out['sentences'][i]
@@ -274,6 +275,7 @@ def getPosTriples(corenlp_out, dygiepp, cso_topics):
 		if i < len(dygiepp.keys()):
 			dygiepp_sentence_entities = [x for (x, xtype) in dygiepp[i]['entities']]
 		acronyms = detectAcronymsLenient(dygiepp_sentence_entities + cso_topics)
+		posAcronyms.update(acronyms)
 
 		entities_in_sentence = []
 		for e in set(dygiepp_sentence_entities + cso_topics):
@@ -325,7 +327,7 @@ def getPosTriples(corenlp_out, dygiepp, cso_topics):
 	return set(new_triples)
 
 
-def getDependencyTriples(corenlp_out, dygiepp, cso_topics):
+def getDependencyTriples(corenlp_out, dygiepp, cso_topics, dependencyAcronyms):
 	triples = []
 	validPatterns = [
 			('nsubj', 'obj'), 
@@ -360,6 +362,7 @@ def getDependencyTriples(corenlp_out, dygiepp, cso_topics):
 		if i < len(dygiepp.keys()):
 			dygiepp_sentence_entities = [x for (x, xtype) in dygiepp[i]['entities']]
 		acronyms = detectAcronymsLenient(dygiepp_sentence_entities + cso_topics)
+		dependencyAcronyms.update(acronyms)
 	
 		#finidng position of entities as token numbers
 		entities_in_sentence = []
@@ -402,7 +405,7 @@ def getDependencyTriples(corenlp_out, dygiepp, cso_topics):
 
 # this is used to map entities to acronyms and prepare the list of relations of each file that can be saved
 # similarly to the other extractor tools
-def manageEntitiesAndDygieepRelations(dygiepp, llm,  cso_topics):
+def manageEntitiesAndDygieepRelations(dygiepp, llm,  cso_topics, dygieppLlmAcronyms):
 	dygiepp_entities = []
 	llm_entities = []
 	dygiepp_e2type = {}
@@ -433,8 +436,8 @@ def manageEntitiesAndDygieepRelations(dygiepp, llm,  cso_topics):
 
 
 	acronyms = detectAcronymsLenient(entities)
-	print('Acronyms:')
-	print(acronyms)
+	dygieppLlmAcronyms.update(acronyms)
+
 
 	for e in entities:
 		if e in e2type:
@@ -523,6 +526,8 @@ def extraction(filename,booleanArgument):
 
 	print('> processing: ' + filename)
 	fw = open(output_dir + filename, 'w+')
+	fw1 = open(output_dir + filename + '_acronyms.txt', 'w+')
+
 
 	print('> processing: ' + filename + ' metadata reading')
 	f = open(dataset_dump_dir + filename, 'r')
@@ -554,6 +559,11 @@ def extraction(filename,booleanArgument):
 	print('number of llm papers : ' + str(len(paper2llm)))
 	nlp = StanfordCoreNLP('http://localhost', port=9050)
 	paper2openie = {}
+	dygieppLlmAcronyms = {}
+	openieAcronyms = {}
+	posAcronyms = {}
+	dependencyAcronyms = {}
+
 	print('> processing: ' + filename + ' core nlp extraction')
 	for index,paper_id in enumerate(tqdm(paper2metadata.keys(), total=len(paper2metadata.keys()), desc="Processing articles in the dataset:")):
 		if paper_id in paper2dygiepp and paper_id in paper2llm:
@@ -562,10 +572,10 @@ def extraction(filename,booleanArgument):
 			try:
 				text_data = paper2metadata[paper_id]['title'].encode('utf8', 'ignore').decode('ascii', 'ignore') + '. ' + paper2metadata[paper_id]['abstract'].encode('utf8', 'ignore').decode('ascii', 'ignore')
 				corenlp_out = json.loads(nlp.annotate(text_data, properties=props))
-				openie_triples = getOpenieTriples(corenlp_out, paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'])
-				pos_triples = getPosTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'])
-				dependency_triples = getDependencyTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] + paper2metadata[paper_id]['cso_syntactic_topics'])
-				entities, dygiepp_triples, llm_triples = manageEntitiesAndDygieepRelations(paper2dygiepp[paper_id],paper2llm[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] + paper2metadata[paper_id]['cso_syntactic_topics'])
+				openie_triples = getOpenieTriples(corenlp_out, paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'], openieAcronyms)
+				pos_triples = getPosTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'],posAcronyms )
+				dependency_triples = getDependencyTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] + paper2metadata[paper_id]['cso_syntactic_topics'], dependencyAcronyms)
+				entities, dygiepp_triples, llm_triples = manageEntitiesAndDygieepRelations(paper2dygiepp[paper_id],paper2llm[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] + paper2metadata[paper_id]['cso_syntactic_topics'], dygieppLlmAcronyms)
 
 				data_input_for_dygepp = json.dump({
 						'doc_key' : str(paper_id),
@@ -577,10 +587,20 @@ def extraction(filename,booleanArgument):
 						'llm_triples': list(llm_triples)
 					},fw)
 				fw.write('\n')
+				fw1.write(dygieppLlmAcronyms)
+				fw1.write('\n')
+				fw1.write(openieAcronyms)
+				fw1.write('\n')
+				fw1.write(posAcronyms)
+				fw1.write('\n')
+				fw1.write(dependencyAcronyms)
+				fw1.write('\n')
 			except Exception as e:
 				print(e)
 	fw.flush()
 	fw.close()
+	fw1.flush()
+	fw1.close()
 
 if __name__ == '__main__':
 	print(len(sys.argv))
@@ -601,7 +621,10 @@ if __name__ == '__main__':
 	print(len(files_to_parse))
 	pool = mp.Pool(10)
 	result = pool.map(extraction_with_bool, files_to_parse)
-	
+
+
+
+
 	#detectAcronyms([('machine learning (ML)', 'A'), ('danilo dessi', 'B'), ('natural language processing (NLP)', 'C'), ('Natural Language Processing (NLP)', 'C')])
 
 
