@@ -18,19 +18,20 @@ class EntitiesCleaner:
 
 	def cleanPunctuactonStopwords(self):
 		swords = set(stopwords.words('english'))
-		regex_puntuaction_ok = re.compile('[%s]' % re.escape("\"_`'")) # possible characters
+		regex_puntuaction_ok = re.compile('[%s]' % re.escape("\"_`.'")) # possible characters
 		regex_acronym = re.compile("\(.*") # remove acronyms e.g., machine learning (ml) -> machine learning
-		puntuaction_reject = list("!#$%*+,./:;<=>?@%=[]^{|}~/{}") + ['\\']
+		puntuaction_reject = list("!#$%*+,/:;<=>?@%=[]^{|}~/{}") + ['\\']
 		for e in self.entities:
 			if e.lower() not in swords:
 				valid_puntuaction = True
 				for c in e:
 					if c in puntuaction_reject:
 						valid_puntuaction = False
+						print('discard entity with invalid punctuation: ' + str(e))
 						break
 
 				if valid_puntuaction:
-					e_fixed = e.replace('`', '').replace('\'s', '').replace('’s', '').replace('’', '').replace('\'', '').replace('(', '').replace(')', '').replace('-', ' ').strip()
+					e_fixed = e.replace('`', '').replace('\'s', '').replace('’s', '').replace('’', '').replace('\'', '').replace('(', '').replace(')', '').replace('-', ' ').replace('.', '').strip()
 					e_fixed = regex_acronym.sub('', e_fixed).strip()
 					e_fixed = regex_puntuaction_ok.sub('_', e_fixed)
 					e_fixed = re.sub(r'\s+', ' ', e_fixed)

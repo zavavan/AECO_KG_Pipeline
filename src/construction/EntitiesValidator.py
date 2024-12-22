@@ -13,6 +13,7 @@ import time
 class EntitiesValidator:
 	
 	def __init__(self, entities2files):
+		self.entities2files = entities2files
 		self.inputEntities = set([e for (e, e_type) in entities2files.keys()]),
 		self.csoResourcePath = '../../resources/CSO.3.1.csv'
 		self.blacklist_path = '../../resources/blacklist.txt'
