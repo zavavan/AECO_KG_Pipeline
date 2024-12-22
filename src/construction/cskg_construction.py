@@ -251,9 +251,10 @@ class TriplesGenerator:
 			print(' \t- pos triples:\t\t', len(self.pos2files))
 			print(' \t- dep triples:\t\t', len(self.dependency2files))
 		elif not ckpts_validation and not ckpts_relations_handler and not ckpts_mapping:
-			ev = EntitiesValidator(set([e for (e,e_type) in self.entities2files.keys()]))	
+			ev = EntitiesValidator(self.entities2files)
 			ev.run()
 			valid_entities = ev.get()
+
 			self.updateThroughValidEntities(valid_entities)
 			del ev
 			gc.collect()
@@ -308,7 +309,7 @@ class TriplesGenerator:
 			all_pairs = set(self.dygiepp_pair2info.keys()) | set(self.llm_pair2info.keys()) | set(self.pos_pair2info.keys()) | set(self.openie_pair2info.keys()) | set(self.dep_pair2info.keys())
 			#mapper = EntitiesMapper([e for e, t in self.entities2files.keys()], all_pairs)
 			cut_freq = 1
-			mapper = EntitiesMapper(self.entitiesFreq(cut_freq), all_pairs)
+			mapper = EntitiesMapper(self.entitiesFreq(cut_freq),self.entities2files, all_pairs)
 			mapper.run()
 			self.e2openalex, self.e2cso, self.e2dbpedia, self.e2wikidata = mapper.getMaps()
 			del mapper

@@ -18,13 +18,13 @@ import time
 import csv
 import os
 import requests
-
 from tqdm import tqdm
 
 
 class EntitiesMapper:
-	def __init__(self, entities, all_pairs):
+	def __init__(self, entities, entities2files, all_pairs):
 		self.entities = entities
+		self.entities2files = entities2files
 		self.e2openalex = {}
 		self.e2cso = {}
 		self.e2wikidata = {}
@@ -33,6 +33,7 @@ class EntitiesMapper:
 		self.all_pairs = all_pairs
 		self.e2neighbors = {}
 		self.aecoWikidataMapping = {}
+		self.open_alex_wikidata_mapping = {}
 
 		self.cso_map = {}
 		self.dbpedia_map = {}
@@ -41,6 +42,7 @@ class EntitiesMapper:
 
 		self.csoResourcePath = '../../resources/CSO.3.1.csv'
 		self.aecoResourcePath = '../../resources/AECO_domain_label_mapping.json'
+		self.openalexResourcePath = '../../resources/openalex_wikidata_concepts.json'
 		self.mappedTriples = {} # main output of this class
 
 
@@ -195,6 +197,15 @@ class EntitiesMapper:
 
 		self.aecoWikidataMapping = data
 
+	def buildOpenAlexConcepts(self):
+		print('loading the open_alex_wikidata_concept_map: ')
+		with open(self.openalexResourcePath, 'r') as file:
+			data = json.load(file)
+
+		self.open_alex_wikidata_mapping = data
+
+
+
 	def linkThroughWikidataForAECO(self):
 		print('- \t >> Mapping with wikidata started')
 		timepoint = time.time()
@@ -231,50 +242,17 @@ class EntitiesMapper:
 		print('> Mapped to Wikidata:', len(self.e2wikidata))
 		print(self.e2wikidata)
 
-	def collectOpenAlexConcepts(self):
-		# collect all papers ids
-		paper_ids = []
-		for ent, ids in self.entities2files.items():
-			paper_ids.extend(ids)
-
-		paper_ids = set(paper_ids)
-		print('collected ' + str(len(paper_ids)) + ' paper ids for openalexLinking')
-
-		# Base URL for OpenAlex API
-		base_url = "https://api.openalex.org/works/"
-
-		# Initialize a set to store unique Wikidata concepts
-		wikidata_concepts = {}
-
-		# Iterate through each paper
-		for paper_id in tqdm.tqdm(paper_ids, total=len(paper_ids)):
-			try:
-				response = requests.get(f"{base_url}{paper_id}")
-				if response.status_code == 200:
-					paper_data = response.json()
-					# Extract concepts from the response
-					if "concepts" in paper_data:
-						for concept in paper_data["concepts"]:
-							wikidata_concepts[concept["name"].lower()] ='http://www.wikidata.org/entity/' + concept["wikidata"]
-				else:
-					print(f"Failed to fetch data for paper ID {paper_id}: {response.status_code}")
-			except Exception as e:
-				print(f"Error fetching data for paper ID {paper_id}: {e}")
-
-			# Avoid hitting the API rate limit
-			time.sleep(0.2)  # Adjust based on OpenAlex API rate limits
-		# Output the collected Wikidata concepts
-		print(f"Collected {len(wikidata_concepts)} unique Wikidata concepts from OpenAlex.")
-		print(wikidata_concepts)
-		return wikidata_concepts
 
 	def linkThroughOpenAlexConcepts(self):
 		print('- \t >> Mapping with openalex started')
-		wikidata_concepts = self.collectOpenAlexConcepts()
+
+		#initialize from json file the openalex2wikidata mapping
+		self.buildOpenAlexConcepts()
+
 		entities_to_explore = set(self.entities) - set(self.e2openalex.keys())
 		if len(entities_to_explore) <= 0:
 			return
-		for concept,wikiEnt in wikidata_concepts.items():
+		for concept,wikiEnt in self.open_alex_wikidata_mapping.items():
 			if concept in entities_to_explore:
 				self.e2openalex[concept] = wikiEnt
 

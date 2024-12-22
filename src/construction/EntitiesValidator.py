@@ -6,18 +6,20 @@ import json
 import nltk
 import csv
 import os
-
-
+import requests
+from tqdm import tqdm
+import time
 
 class EntitiesValidator:
 	
-	def __init__(self, entities):
-		self.inputEntities = entities
+	def __init__(self, entities2files):
+		self.inputEntities = set([e for (e, e_type) in entities2files.keys()]),
 		self.csoResourcePath = '../../resources/CSO.3.1.csv'
 		self.blacklist_path = '../../resources/blacklist.txt'
 		self.mag_topics_dir = '../../dataset/computer_science/'
 		self.csoTopics = set()
 		self.magTopics = set()
+		self.wikidata_concepts = {}
 		self.validEntities = set()
 		self.blacklist = set()
 
@@ -41,6 +43,46 @@ class EntitiesValidator:
 			for line in f.readlines():
 				self.blacklist.add(line.strip())
 
+	def load_open_alex_concepts(self):
+		# collect all papers ids
+		paper_ids = []
+		for ent, ids in self.entities2files.items():
+			paper_ids.extend(ids)
+
+		paper_ids = set(paper_ids)
+		print('collected ' + str(len(paper_ids)) + ' paper ids for openalexLinking')
+
+		# Base URL for OpenAlex API
+		base_url = "https://api.openalex.org/works/"
+
+		# Initialize a set to store unique Wikidata concepts
+		wikidata_concepts = {}
+
+		# Iterate through each paper
+		for paper_id in tqdm(paper_ids, total=len(paper_ids)):
+			try:
+				response = requests.get(f"{base_url}{paper_id}")
+				if response.status_code == 200:
+					paper_data = response.json()
+					# Extract concepts from the response
+					if "concepts" in paper_data:
+						for concept in paper_data["concepts"]:
+							self.wikidata_concepts[concept["name"].lower()] ='http://www.wikidata.org/entity/' + concept["wikidata"]
+				else:
+					print(f"Failed to fetch data for paper ID {paper_id}: {response.status_code}")
+			except Exception as e:
+				print(f"Error fetching data for paper ID {paper_id}: {response.status_code}")
+
+			# Avoid hitting the API rate limit
+			time.sleep(0.2)  # Adjust based on OpenAlex API rate limits
+		# Output the collected Wikidata concepts
+		print(f"Collected {len(self.wikidata_concepts)} unique Wikidata concepts from OpenAlex.")
+		print(self.wikidata_concepts)
+
+		output_path = '../../resources/openalex_wikidata_concepts.json'
+		with open(output_path, "w") as f:
+			json.dump(self.wikidata_concepts, f)
+
 
 	def loadMAGTopics(self):
 		for filename in os.listdir(self.mag_topics_dir):
@@ -59,19 +101,23 @@ class EntitiesValidator:
 		semcor_ic = wordnet_ic.ic('ic-semcor.dat')
 		for e in self.inputEntities:
 			if e in self.blacklist or len(e) <= 2 or e.isdigit() or e[0].isdigit() or len(nltk.word_tokenize(e)) >= 7:# # no blacklist, no 1-character entities, no only numbers, no entities that start with a number, no entities with more than 7 tokens
-				continue			
+				print('invalid entity: ' + str(e))
+				continue
   
 			if e in self.csoTopics:
 				self.validEntities.add(e)
 			elif e in self.magTopics:
 				self.validEntities.add(e)
+			elif e in self.wikidata_concepts.keys():
+				self.validEntities.add(e)
+
 			else:
 				valid = True
 				for synset in wn.synsets(e):
 					ic_value = semcor_ic['n'][synset.offset()]
 					if ic_value <= 4 and ic_value > 0:
 						valid = False
-						#print(e, 'NOT', ic_value)
+						print('invalid entity: ' + str(e) + ' -- ic_value: ' + str(ic_value))
 						break
 				if valid:
 					self.validEntities.add(e)
@@ -80,6 +126,7 @@ class EntitiesValidator:
 		self.loadCSOTopics()
 		self.loadBlacklist()
 		self.loadMAGTopics()
+		self.load_open_alex_concepts()
 		self.validation()
 
 
