@@ -84,6 +84,7 @@ class EntitiesValidator:
 
 
 	def get(self):
+		print(self.validEntities)
 		return self.validEntities
 
 

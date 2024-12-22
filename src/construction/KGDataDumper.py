@@ -9,13 +9,14 @@ import csv
 import os
 
 class KGDataDumper:
-	def __init__(self, dygiepp_pair2info, llm_pair2info, pos_pair2info, openie_pair2info, dep_pair2info, e2cso, e2dbpedia, e2wikidata, e2type):
+	def __init__(self, dygiepp_pair2info, llm_pair2info, pos_pair2info, openie_pair2info, dep_pair2info, e2openalex, e2cso, e2dbpedia, e2wikidata, e2type):
 
 		self.dygiepp_pair2info = dygiepp_pair2info
 		self.llm_pair2info = llm_pair2info
 		self.pos_pair2info = pos_pair2info
 		self.openie_pair2info = openie_pair2info
 		self.dep_pair2info = dep_pair2info
+		self.e2openalex = e2openalex
 		self.e2cso = e2cso
 		self.e2dbpedia = e2dbpedia
 		self.e2wikidata = e2wikidata
@@ -89,12 +90,17 @@ class KGDataDumper:
 
 	def mergeEntities(self):
 
+		openalex2cskg = {}
 		cso2cskg = {}
 		wikidata2cskg = {}
 		dbpedia2cskg = {}
 
 		for (s,o) in self.pair2info:
-			
+
+			if s in self.e2openalex:
+				if self.e2openalex[s] not in openalex2cskg:
+					openalex2cskg[self.e2openalex[s]] = []
+				openalex2cskg[self.e2openalex[s]] += [s]
 			if s in self.e2cso:
 				if self.e2cso[s] not in cso2cskg:
 					cso2cskg[self.e2cso[s]] = []
@@ -108,6 +114,10 @@ class KGDataDumper:
 					wikidata2cskg[self.e2wikidata[s]] = []
 				wikidata2cskg[self.e2wikidata[s]] += [s]
 
+			if o in self.e2openalex:
+				if self.e2openalex[o] not in openalex2cskg:
+					openalex2cskg[self.e2openalex[o]] = []
+				openalex2cskg[self.e2openalex[o]] += [o]
 			if o in self.e2cso:
 				if self.e2cso[o] not in cso2cskg:
 					cso2cskg[self.e2cso[o]] = []
@@ -120,6 +130,14 @@ class KGDataDumper:
 				if self.e2wikidata[o] not in wikidata2cskg:
 					wikidata2cskg[self.e2wikidata[o]] = []
 				wikidata2cskg[self.e2wikidata[o]] += [o]
+
+		# merging with openalex
+		for oae, oakg_entities_labels in openalex2cskg.items():
+			oekg_entity = max(list(set(oakg_entities_labels)), key=len)  # longest label
+
+			for label in list(set(oakg_entities_labels)):
+				self.label2cskg_entity[label] = oekg_entity
+			self.cskg2cso[oekg_entity] = oae
 
 		# merging with cso
 		for csoe, cskg_entities_labels in cso2cskg.items():
@@ -165,6 +183,7 @@ class KGDataDumper:
 				self.label2cskg_entity[label] = cskg_entity
 			self.cskg2wikidata[cskg_entity] = wde
 
+		print('self.label2cskg_entity')
 		print(self.label2cskg_entity)
 
 	# function used by mergeEntitiesEuristic
@@ -178,7 +197,7 @@ class KGDataDumper:
 			ej = entities[j] # entity 
 
 			# since the results are ordered, the loop is stopped when the similarity is lower than 0.9
-			if score < 0.9:
+			if score < 0.75:
 				break
 
 			if ei not in self.label2cskg_entity and ej not in self.label2cskg_entity:
@@ -239,7 +258,8 @@ class KGDataDumper:
 					self.mergeEntitiesEmbeddings(model, list(entities))
 				#print('\t>> tokens to be checked:', wordcount)
 
-			
+		print('self.label2cskg_entity')
+		print(self.label2cskg_entity)
 
 	def createTriplesData(self):
 

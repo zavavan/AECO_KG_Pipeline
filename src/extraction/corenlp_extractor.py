@@ -62,7 +62,10 @@ def pairwise(iterable):
 def mapEntityAcronyms(acronyms, e):
 	if e in acronyms:
 		return acronyms[e]
-	return e
+	elif e.lower() in acronyms:
+		return acronyms[e.lower()]
+	else:
+		return e
 
 
 def detectAcronyms(elist):
@@ -234,7 +237,7 @@ def getLlmResults(dresult):
 '''
 
 
-def getOpenieTriples(corenlp_out, dygiepp, cso_topics, openieacronyms):
+def getOpenieTriples(corenlp_out, dygiepp, cso_topics,acronyms):
 	relations = []
 	for i in range(len(corenlp_out['sentences'])): #sentence in corenlp_out['sentences']:
 		sentence = corenlp_out['sentences'][i]
@@ -243,8 +246,7 @@ def getOpenieTriples(corenlp_out, dygiepp, cso_topics, openieacronyms):
 		if i < len(dygiepp.keys()):
 			dygiepp_sentence_entities = [x for (x, xtype) in dygiepp[i]['entities']]
 			#print(dygiepp_sentence_entities)
-		acronyms = detectAcronymsLenient(dygiepp_sentence_entities + cso_topics)
-		openieacronyms.update(acronyms)
+
 
 		for el in openie:
 			#print(el)
@@ -285,7 +287,7 @@ def getOpenieTriples(corenlp_out, dygiepp, cso_topics, openieacronyms):
 	return set(relations)
 
 
-def getPosTriples(corenlp_out, dygiepp, cso_topics, posAcronyms):
+def getPosTriples(corenlp_out, dygiepp, cso_topics, acronyms):
 	triples = []
 	for i in range(len(corenlp_out['sentences'])): 
 		sentence = corenlp_out['sentences'][i]
@@ -295,8 +297,7 @@ def getPosTriples(corenlp_out, dygiepp, cso_topics, posAcronyms):
 
 		if i < len(dygiepp.keys()):
 			dygiepp_sentence_entities = [x for (x, xtype) in dygiepp[i]['entities']]
-		acronyms = detectAcronymsLenient(dygiepp_sentence_entities + cso_topics)
-		posAcronyms.update(acronyms)
+
 
 		entities_in_sentence = []
 		for e in set(dygiepp_sentence_entities + cso_topics):
@@ -348,7 +349,7 @@ def getPosTriples(corenlp_out, dygiepp, cso_topics, posAcronyms):
 	return set(new_triples)
 
 
-def getDependencyTriples(corenlp_out, dygiepp, cso_topics, dependencyAcronyms):
+def getDependencyTriples(corenlp_out, dygiepp, cso_topics, acronyms):
 	triples = []
 	validPatterns = [
 			('nsubj', 'obj'), 
@@ -382,9 +383,7 @@ def getDependencyTriples(corenlp_out, dygiepp, cso_topics, dependencyAcronyms):
 
 		if i < len(dygiepp.keys()):
 			dygiepp_sentence_entities = [x for (x, xtype) in dygiepp[i]['entities']]
-		acronyms = detectAcronymsLenient(dygiepp_sentence_entities + cso_topics)
-		dependencyAcronyms.update(acronyms)
-	
+
 		#finidng position of entities as token numbers
 		entities_in_sentence = []
 		for e in set(dygiepp_sentence_entities + cso_topics):
@@ -426,7 +425,7 @@ def getDependencyTriples(corenlp_out, dygiepp, cso_topics, dependencyAcronyms):
 
 # this is used to map entities to acronyms and prepare the list of relations of each file that can be saved
 # similarly to the other extractor tools
-def manageEntitiesAndDygieepRelations(dygiepp, llm,  cso_topics, dygieppLlmAcronyms):
+def manageEntitiesAndDygieepRelations(dygiepp, llm, entities, acronyms):
 	dygiepp_entities = []
 	llm_entities = []
 	dygiepp_e2type = {}
@@ -437,28 +436,18 @@ def manageEntitiesAndDygieepRelations(dygiepp, llm,  cso_topics, dygieppLlmAcron
 	ok_relations_llm = []
 
 	for sentence in dygiepp:
-		dygiepp_entities += [x for (x, xtype) in dygiepp[sentence]['entities']]
 		for (x, xtype) in dygiepp[sentence]['entities']:
 			dygiepp_e2type[x] = xtype
 	for sentence in llm:
-		llm_entities += [x for (x, xtype) in llm[sentence]['entities']]
 		for (x, xtype) in llm[sentence]['entities']:
 			llm_e2type[x] = xtype
 
-	print('dygiepp_entities : ' + str(len(dygiepp_entities)) )
-	print('llm_entities : ' + str(len(llm_entities)))
-	entities = dygiepp_entities + llm_entities + cso_topics
 	dygiepp_ent_num = len(dygiepp_e2type)
 
 	dygiepp_e2type.update(llm_e2type)
 
 	print('added llm entities =  ' + str(len(dygiepp_e2type) - dygiepp_ent_num))
 	e2type = dygiepp_e2type
-
-
-	acronyms = detectAcronymsLenient(entities)
-	dygieppLlmAcronyms.update(acronyms)
-
 
 	for e in entities:
 		if e in e2type:
@@ -594,10 +583,24 @@ def extraction(filename,booleanArgument):
 			try:
 				text_data = paper2metadata[paper_id]['title'].encode('utf8', 'ignore').decode('ascii', 'ignore') + '. ' + paper2metadata[paper_id]['abstract'].encode('utf8', 'ignore').decode('ascii', 'ignore')
 				corenlp_out = json.loads(nlp.annotate(text_data, properties=props))
-				openie_triples = getOpenieTriples(corenlp_out, paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'], openieAcronyms)
-				pos_triples = getPosTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'],posAcronyms )
-				dependency_triples = getDependencyTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] + paper2metadata[paper_id]['cso_syntactic_topics'], dependencyAcronyms)
-				entities, dygiepp_triples, llm_triples = manageEntitiesAndDygieepRelations(paper2dygiepp[paper_id],paper2llm[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] + paper2metadata[paper_id]['cso_syntactic_topics'], dygieppLlmAcronyms)
+
+				dygiepp_entities = []
+				llm_entities = []
+				cso_topics = paper2metadata[paper_id]['cso_semantic_topics'] + paper2metadata[paper_id]['cso_syntactic_topics']
+				for sentence in paper2dygiepp[paper_id]:
+					dygiepp_entities += [x for (x, xtype) in paper2dygiepp[paper_id][sentence]['entities']]
+				for sentence in paper2llm[paper_id]:
+					llm_entities += [x for (x, xtype) in paper2llm[paper_id][sentence]['entities']]
+
+				print('dygiepp_entities : ' + str(len(dygiepp_entities)))
+				print('llm_entities : ' + str(len(llm_entities)))
+				entities = dygiepp_entities + llm_entities + cso_topics
+				acronyms = detectAcronymsLenient(entities)
+
+				openie_triples = getOpenieTriples(corenlp_out, paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'], acronyms)
+				pos_triples = getPosTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'],acronyms )
+				dependency_triples = getDependencyTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] + paper2metadata[paper_id]['cso_syntactic_topics'], acronyms)
+				entities, dygiepp_triples, llm_triples = manageEntitiesAndDygieepRelations(paper2dygiepp[paper_id],paper2llm[paper_id], entities, acronyms)
 
 				data_input_for_dygepp = json.dump({
 						'doc_key' : str(paper_id),
@@ -609,7 +612,7 @@ def extraction(filename,booleanArgument):
 						'llm_triples': list(llm_triples)
 					},fw)
 				fw.write('\n')
-				fw1.write(paper_id + ':' + str(dygieppLlmAcronyms) + str(openieAcronyms) + str(posAcronyms) + str(dependencyAcronyms))
+				fw1.write(paper_id + ':' + str(acronyms))
 				fw1.write('\n')
 			except Exception as e:
 				print(e)

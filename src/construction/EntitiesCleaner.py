@@ -30,14 +30,15 @@ class EntitiesCleaner:
 						break
 
 				if valid_puntuaction:
-					e_fixed = e.replace('`', '').replace('\'s', '').replace('\'', '').replace('(', '').replace(')', '').replace('-', ' ').strip()
+					e_fixed = e.replace('`', '').replace('\'s', '').replace('’s', '').replace('’', '').replace('\'', '').replace('(', '').replace(')', '').replace('-', ' ').strip()
 					e_fixed = regex_acronym.sub('', e_fixed).strip()
 					e_fixed = regex_puntuaction_ok.sub('_', e_fixed)
+					e_fixed = re.sub(r'\s+', ' ', e_fixed)
 					e_fixed = e_fixed.lower()
 					
 					self.entity2cleaned_entity[e] = e_fixed
-		print('self.entity2cleaned_entity')
-		print(self.entity2cleaned_entity[e])
+
+
 
 	def lemmatize(self):
 		wnl = nltk.stem.WordNetLemmatizer()
@@ -47,6 +48,9 @@ class EntitiesCleaner:
 			if len(e_cleaned_tokens) >= 1:
 				e_lemmatized = ' '.join(e_cleaned_tokens[:-1] + [wnl.lemmatize(e_cleaned_tokens[-1].strip(), 'n')])
 				self.entity2cleaned_entity[e_original] = e_lemmatized
+
+		print('self.entity2cleaned_entity')
+		print(self.entity2cleaned_entity)
 
 
 	def toPreferredString(self):

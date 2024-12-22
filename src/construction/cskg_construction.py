@@ -20,6 +20,7 @@ class TriplesGenerator:
 		self.dependency2files = {}
 		self.data_extracted_dir = '../../outputs/extracted_triples/'
 		self.e2selected_type = {}
+		self.e2openalex = {}
 		self.e2cso = {} 
 		self.e2dbpedia = {}
 		self.e2wikidata = {}
@@ -302,24 +303,24 @@ class TriplesGenerator:
 		print('>> Mapping to external resources')
 		if ckpts_mapping:
 			print('\t>> Loaded from ckpts')
-			self.e2cso, self.e2dbpedia, self.e2wikidata= self.loadCheckpoint('mapping')
+			self.e2openalex, self.e2cso, self.e2dbpedia, self.e2wikidata= self.loadCheckpoint('mapping')
 		elif not ckpts_mapping:
 			all_pairs = set(self.dygiepp_pair2info.keys()) | set(self.llm_pair2info.keys()) | set(self.pos_pair2info.keys()) | set(self.openie_pair2info.keys()) | set(self.dep_pair2info.keys())
 			#mapper = EntitiesMapper([e for e, t in self.entities2files.keys()], all_pairs)
 			cut_freq = 1
 			mapper = EntitiesMapper(self.entitiesFreq(cut_freq), all_pairs)
 			mapper.run()
-			self.e2cso, self.e2dbpedia, self.e2wikidata = mapper.getMaps()
+			self.e2openalex, self.e2cso, self.e2dbpedia, self.e2wikidata = mapper.getMaps()
 			del mapper
 			gc.collect()
-			self.createCheckpoint('mapping', (self.e2cso, self.e2dbpedia, self.e2wikidata))
+			self.createCheckpoint('mapping', (self.e2openalex, self.e2cso, self.e2dbpedia, self.e2wikidata))
 		else:
 			print('\t>> skipped')
 		print('--------------------------------------')
 
 		print('>> Data dumping and merging')
 		self.entitiesTyping()
-		dumper = KGDataDumper(self.dygiepp_pair2info, self.llm_pair2info,  self.pos_pair2info, self.openie_pair2info, self.dep_pair2info, self.e2cso, self.e2dbpedia, self.e2wikidata, self.e2selected_type)
+		dumper = KGDataDumper(self.dygiepp_pair2info, self.llm_pair2info,  self.pos_pair2info, self.openie_pair2info, self.dep_pair2info, self.e2openalex, self.e2cso, self.e2dbpedia, self.e2wikidata, self.e2selected_type)
 		dumper.run()
 		print('--------------------------------------')
 

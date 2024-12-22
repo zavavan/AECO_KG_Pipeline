@@ -17,13 +17,15 @@ import json
 import time
 import csv
 import os
+import requests
 
 from tqdm import tqdm
 
 
 class EntitiesMapper:
 	def __init__(self, entities, all_pairs):
-		self.entities = entities 
+		self.entities = entities
+		self.e2openalex = {}
 		self.e2cso = {}
 		self.e2wikidata = {}
 		self.e2dbpedia = {}
@@ -229,6 +231,57 @@ class EntitiesMapper:
 		print('> Mapped to Wikidata:', len(self.e2wikidata))
 		print(self.e2wikidata)
 
+	def collectOpenAlexConcepts(self):
+		# collect all papers ids
+		paper_ids = []
+		for ent, ids in self.entities2files.items():
+			paper_ids.extend(ids)
+
+		paper_ids = set(paper_ids)
+		print('collected ' + str(len(paper_ids)) + ' paper ids for openalexLinking')
+
+		# Base URL for OpenAlex API
+		base_url = "https://api.openalex.org/works/"
+
+		# Initialize a set to store unique Wikidata concepts
+		wikidata_concepts = {}
+
+		# Iterate through each paper
+		for paper_id in tqdm.tqdm(paper_ids, total=len(paper_ids)):
+			try:
+				response = requests.get(f"{base_url}{paper_id}")
+				if response.status_code == 200:
+					paper_data = response.json()
+					# Extract concepts from the response
+					if "concepts" in paper_data:
+						for concept in paper_data["concepts"]:
+							wikidata_concepts[concept["name"].lower()] ='http://www.wikidata.org/entity/' + concept["wikidata"]
+				else:
+					print(f"Failed to fetch data for paper ID {paper_id}: {response.status_code}")
+			except Exception as e:
+				print(f"Error fetching data for paper ID {paper_id}: {e}")
+
+			# Avoid hitting the API rate limit
+			time.sleep(0.2)  # Adjust based on OpenAlex API rate limits
+		# Output the collected Wikidata concepts
+		print(f"Collected {len(wikidata_concepts)} unique Wikidata concepts from OpenAlex.")
+		print(wikidata_concepts)
+		return wikidata_concepts
+
+	def linkThroughOpenAlexConcepts(self):
+		print('- \t >> Mapping with openalex started')
+		wikidata_concepts = self.collectOpenAlexConcepts()
+		entities_to_explore = set(self.entities) - set(self.e2openalex.keys())
+		if len(entities_to_explore) <= 0:
+			return
+		for concept,wikiEnt in wikidata_concepts.items():
+			if concept in entities_to_explore:
+				self.e2openalex[concept] = wikiEnt
+
+		pickle_out = open("../../resources/e2openalex.pickle", "wb")
+		pickle.dump(self.e2openalex, pickle_out)
+		pickle_out.close()
+		print('- \t >> Mapped to OpenAlex wikidata concepts:', len(self.e2openalex))
 
 	def findNeiighbors(self):
 
@@ -376,6 +429,10 @@ class EntitiesMapper:
 
 	def save(self):
 
+		pickle_out = open("../../resources/e2openalex.pickle", "wb")
+		pickle.dump(self.e2openalex, pickle_out)
+		pickle_out.close()
+
 		pickle_out = open("../../resources/e2cso.pickle","wb")
 		pickle.dump(self.e2cso, pickle_out)
 		pickle_out.close()
@@ -395,9 +452,16 @@ class EntitiesMapper:
 
 	def load(self):
 
+		p_openalex = Process(target=self.linkThroughOpenAlexConcepts())
 		p_cso = Process(target=self.linkThroughCSO)
 		p_wikidata = Process(target=self.linkThroughWikidataForAECO())
 		p_dbpedia = Process(target=self.linkThroughLocalDBpediaSpotLight)
+
+		if os.path.exists("../../resources/e2openalex.pickle"):
+			f = open("../../resources/e2openalex.pickle","rb")
+			self.e2openalex = pickle.load(f)
+			f.close()
+		p_openalex.start()
 
 		if os.path.exists("../../resources/e2cso.pickle"):
 			f = open("../../resources/e2cso.pickle","rb")
@@ -416,7 +480,9 @@ class EntitiesMapper:
 			self.e2wikidata = pickle.load(f)
 			f.close()
 		p_wikidata.start()
-		
+
+		try: p_openalex.join()
+		except: pass
 		try: p_cso.join() 
 		except: pass 
 		try: p_wikidata.join() 
@@ -430,7 +496,7 @@ class EntitiesMapper:
 		self.load()
 
 	def getMaps(self):
-		return self.e2cso, self.e2dbpedia, self.e2wikidata
+		return self.e2openalex, self.e2cso, self.e2dbpedia, self.e2wikidata
 
 
 
