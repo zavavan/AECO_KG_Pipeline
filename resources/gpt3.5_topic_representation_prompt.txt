@@ -1,0 +1,7 @@
+I have a topic that contains the following documents:
+[DOCUMENTS]
+
+The topic is described by the following keywords: '[KEYWORDS]'
+
+Based on the documents and the keywords, extract a short topic label in the following format:
+topic: <short topic label>
