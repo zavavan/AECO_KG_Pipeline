@@ -8,7 +8,7 @@ import pickle
 import json
 import os
 import gc
-
+from collections import defaultdict
 
 class TriplesGenerator:
 	def __init__(self):
@@ -34,6 +34,10 @@ class TriplesGenerator:
 				dic[(s,p,o)] = []
 			dic[(s,p,o)] += [doc_key]
 
+	# updated method to map triple to pairs (doc_key, sent_index) instead of to doc_key only
+	def addDataInTripleDictSentences(dic, triples_list, doc_key):
+		for (s, p, o, sent_index) in triples_list:
+			dic[(s, p, o)].append((doc_key, sent_index))
 
 	def loadData(self):
 		for filename in os.listdir(self.data_extracted_dir):
@@ -43,11 +47,11 @@ class TriplesGenerator:
 				for row in f:
 					try:
 						paper_data = json.loads(row.strip())
-						self.addDataInTripleDict(self.dygiepp2files, paper_data['dygiepp_triples'], paper_data['doc_key'])
-						self.addDataInTripleDict(self.openie2files, paper_data['openie_triples'], paper_data['doc_key'])
-						self.addDataInTripleDict(self.pos2files, paper_data['pos_triples'], paper_data['doc_key'])
-						self.addDataInTripleDict(self.dependency2files, paper_data['dependency_triples'], paper_data['doc_key'])
-						self.addDataInTripleDict(self.llm2files, paper_data['llm_triples'],paper_data['doc_key'])
+						self.addDataInTripleDictSentences(self.dygiepp2files, paper_data['dygiepp_triples'], paper_data['doc_key'])
+						self.addDataInTripleDictSentences(self.openie2files, paper_data['openie_triples'], paper_data['doc_key'])
+						self.addDataInTripleDictSentences(self.pos2files, paper_data['pos_triples'], paper_data['doc_key'])
+						self.addDataInTripleDictSentences(self.dependency2files, paper_data['dependency_triples'], paper_data['doc_key'])
+						self.addDataInTripleDictSentences(self.llm2files, paper_data['llm_triples'],paper_data['doc_key'])
 						for (e, etype) in paper_data['entities']:
 							if (e, etype) not in self.entities2files:
 								self.entities2files[(e, etype)] = []
@@ -62,12 +66,12 @@ class TriplesGenerator:
 
 	def applyCleanerMap(self, relations2files, cleaner_map):
 		tool_triples2files = {}
-		for (s,p,o),files in relations2files.items():
+		for (s,p,o),(files_sents) in relations2files.items():
 			if s in cleaner_map and o in cleaner_map:
 				if (cleaner_map[s],p,cleaner_map[o]) in tool_triples2files:
-					tool_triples2files[(cleaner_map[s],p,cleaner_map[o])].update(set(files))
+					tool_triples2files[(cleaner_map[s],p,cleaner_map[o])].update(set(files_sents))
 				else:
-					tool_triples2files[(cleaner_map[s],p,cleaner_map[o])] = set(files)
+					tool_triples2files[(cleaner_map[s],p,cleaner_map[o])] = set(files_sents)
 		return tool_triples2files
 
 
@@ -93,12 +97,12 @@ class TriplesGenerator:
 
 	def applyValidEntities(self, validEntities, relations2files):
 		new_relations2files = {}
-		for (s,p,o),files in relations2files.items():
+		for (s,p,o),file_sents in relations2files.items():
 			if s in validEntities and o in validEntities:
 				if (s,p,o) in new_relations2files:
-					new_relations2files[(s,p,o)].update(set(files))
+					new_relations2files[(s,p,o)].update(set(file_sents))
 				else:
-					new_relations2files[(s,p,o)] = set(files)
+					new_relations2files[(s,p,o)] = set(file_sents)
 		return new_relations2files
 	
 	def updateThroughValidEntities(self, validEntities):

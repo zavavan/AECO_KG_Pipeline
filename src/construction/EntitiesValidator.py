@@ -18,6 +18,7 @@ class EntitiesValidator:
 		self.csoResourcePath = '../../resources/CSO.3.1.csv'
 		self.blacklist_path = '../../resources/blacklist.txt'
 		self.mag_topics_dir = '../../dataset/computer_science/'
+		self.open_alex_wikidata_concepts_path = '../../resources/wikidata_aeco.json'
 		self.csoTopics = set()
 		self.magTopics = set()
 		self.wikidata_concepts = {}
@@ -45,44 +46,12 @@ class EntitiesValidator:
 				self.blacklist.add(line.strip())
 
 	def load_open_alex_concepts(self):
-		# collect all papers ids
-		paper_ids = []
-		for ent, ids in self.entities2files.items():
-			paper_ids.extend(ids)
+		# Open the file and read its content
+		with open(self.open_alex_wikidata_concepts_path, 'r') as f:
+			file_content = f.read()
 
-		paper_ids = set(paper_ids)
-		print('collected ' + str(len(paper_ids)) + ' paper ids for openalexLinking')
+		self.wikidata_concepts = json.loads(file_content)
 
-		# Base URL for OpenAlex API
-		base_url = "https://api.openalex.org/works/"
-
-		# Initialize a set to store unique Wikidata concepts
-		wikidata_concepts = {}
-
-		# Iterate through each paper
-		for paper_id in tqdm(paper_ids, total=len(paper_ids)):
-			try:
-				response = requests.get(f"{base_url}{paper_id}")
-				if response.status_code == 200:
-					paper_data = response.json()
-					# Extract concepts from the response
-					if "concepts" in paper_data:
-						for concept in paper_data["concepts"]:
-							self.wikidata_concepts[concept["name"].lower()] ='http://www.wikidata.org/entity/' + concept["wikidata"]
-				else:
-					print(f"Failed to fetch data for paper ID {paper_id}: {response.status_code}")
-			except Exception as e:
-				print(f"Error fetching data for paper ID {paper_id}: {response.status_code}")
-
-			# Avoid hitting the API rate limit
-			time.sleep(0.2)  # Adjust based on OpenAlex API rate limits
-		# Output the collected Wikidata concepts
-		print(f"Collected {len(self.wikidata_concepts)} unique Wikidata concepts from OpenAlex.")
-		print(self.wikidata_concepts)
-
-		output_path = '../../resources/openalex_wikidata_concepts.json'
-		with open(output_path, "w") as f:
-			json.dump(self.wikidata_concepts, f)
 
 
 	def loadMAGTopics(self):

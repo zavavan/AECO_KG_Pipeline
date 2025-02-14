@@ -280,10 +280,10 @@ def getOpenieTriples(corenlp_out, dygiepp, cso_topics,acronyms):
 				checked_obj = mapEntityAcronyms(acronyms, checked_obj)
 				if not passive:
 					#print((checked_subj, relation, checked_obj))
-					relations += [(checked_subj, relation, checked_obj)]
+					relations += [(checked_subj, relation, checked_obj, i)]
 				else:
 					#print((checked_obj, relation, checked_subj), '#passive')
-					relations += [(checked_obj, relation, checked_subj)]
+					relations += [(checked_obj, relation, checked_subj, i)]
 	return set(relations)
 
 
@@ -321,7 +321,7 @@ def getPosTriples(corenlp_out, dygiepp, cso_topics, acronyms):
 						verb_pattern += ' ' + sentence_tokens_text_window[k]
 					elif verb_pattern != '':
 						verb_relations += [verb_pattern.strip()]
-						triples += [(ei, verb_pattern.strip(), ej)]
+						triples += [(ei, verb_pattern.strip(), ej, i)]
 						verb_pattern = ''
 
 			elif endj < starti and starti - endj <= 10:
@@ -332,19 +332,19 @@ def getPosTriples(corenlp_out, dygiepp, cso_topics, acronyms):
 						verb_pattern += ' ' + sentence_tokens_text_window[k]
 					elif verb_pattern != '':
 						verb_relations += [verb_pattern.strip()]
-						triples += [(ej, verb_pattern.strip(), ei)]
+						triples += [(ej, verb_pattern.strip(), ei, i)]
 						verb_pattern = ''
 
 	# managing passive
 	new_triples = []
-	for (s,p,o) in triples:
+	for (s,p,o,i) in triples:
 		p_tokens = nltk.word_tokenize(p)
 		v = p_tokens[-1]
 		if 'be' in p_tokens[:-1] and len(p_tokens) > 1:
-			new_triples += [(o, v, s)]
+			new_triples += [(o, v, s, i)]
 			#print((s,p,o), 'PASSIVE->', (o,v,s))
 		else:
-			new_triples += [(s,v,o)]
+			new_triples += [(s,v,o, i)]
 			#print((s,p,o), '->', (s,v,o))
 	return set(new_triples)
 
@@ -415,12 +415,12 @@ def getDependencyTriples(corenlp_out, dygiepp, cso_topics, acronyms):
 					#if tuple(path_dep) == ('nsubj:pass', 'obl', 'conj'):
 					#	print(sentence_tokens_text)
 					#	print((ei, verbs, ej))
-					triples += [(ei, verbs, ej)]
+					triples += [(ei, verbs, ej, i)]
 				elif tuple(path_dep)[::-1] in validPatterns and v:
 					#if tuple(path_dep)[::-1]  == ('nsubj:pass', 'obl', 'conj'):
 					#	print(sentence_tokens_text)
 					#	print((ei, verbs, ej))
-					triples += [(ej, verbs, ei)]
+					triples += [(ej, verbs, ei, i)]
 	return set(triples)
 
 # this is used to map entities to acronyms and prepare the list of relations of each file that can be saved
@@ -457,10 +457,10 @@ def manageEntitiesAndDygieepRelations(dygiepp, llm, entities, acronyms):
 	ok_entities = set(ok_entities)
 
 	for sentence in dygiepp:
-		ok_relations_dygiepp += [(mapEntityAcronyms(acronyms, s), p, mapEntityAcronyms(acronyms, o)) for (s,p,o) in dygiepp[sentence]['relations']]
+		ok_relations_dygiepp += [(mapEntityAcronyms(acronyms, s), p, mapEntityAcronyms(acronyms, o), sentence) for (s,p,o) in dygiepp[sentence]['relations']]
 
 	for sentence in llm:
-		ok_relations_llm += [(mapEntityAcronyms(acronyms, s), p, mapEntityAcronyms(acronyms, o)) for (s,p,o) in llm[sentence]['relations']]
+		ok_relations_llm += [(mapEntityAcronyms(acronyms, s), p, mapEntityAcronyms(acronyms, o), sentence) for (s,p,o) in llm[sentence]['relations']]
 
 
 	return list(ok_entities), list(set(ok_relations_dygiepp)), list(set(ok_relations_llm))

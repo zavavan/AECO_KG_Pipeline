@@ -45,7 +45,7 @@ def load(obj_path):
 	f = open(obj_path, 'rb')
 	return pickle.load(f)
 
-model_name = 'bert-base-uncased'
+model_name = 'bert-base-uncased's
 if len(sys.argv) == 2:
 	model_name = sys.argv[1]
 else:

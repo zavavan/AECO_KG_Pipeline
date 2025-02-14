@@ -10,3 +10,4 @@ statsmodels
 tdqm
 jsonlines
 ijson
+python-Levenshtein
