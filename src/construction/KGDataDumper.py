@@ -32,6 +32,60 @@ class KGDataDumper:
 
 		self.triples_csv_filename = './cskg_data/cskg_triples.csv'
 
+	def collectInfo_w_sentIndexes(self):
+		pairs = set(self.dygiepp_pair2info.keys()) | set(self.llm_pair2info.keys()) | set(
+			self.pos_pair2info.keys()) | set(self.openie_pair2info.keys()) | set(self.dep_pair2info.keys())
+
+		for (s, o) in pairs:
+			if (s, o) not in self.pair2info:
+				self.pair2info[(s, o)] = {}
+
+			if (s, o) in self.dygiepp_pair2info.keys():
+				for rel in self.dygiepp_pair2info[(s, o)]:
+					if rel not in self.pair2info[(s, o)]:
+						self.pair2info[(s, o)][rel] = {'file_sents': list(self.dygiepp_pair2info[(s, o)][rel])}
+						self.pair2info[(s, o)][rel]['source'] = ['dygiepp']
+					else:
+						self.pair2info[(s, o)][rel]['file_sents'] += list(self.dygiepp_pair2info[(s, o)][rel])
+						self.pair2info[(s, o)][rel]['source'] += ['dygiepp']
+
+			if (s, o) in self.llm_pair2info.keys():
+				for rel in self.llm_pair2info[(s, o)]:
+					if rel not in self.pair2info[(s, o)]:
+						self.pair2info[(s, o)][rel] = {'file_sents': list(self.llm_pair2info[(s, o)][rel])}
+						self.pair2info[(s, o)][rel]['source'] = ['llm']
+					else:
+						self.pair2info[(s, o)][rel]['file_sents'] += list(self.llm_pair2info[(s, o)][rel])
+						self.pair2info[(s, o)][rel]['source'] += ['llm']
+
+			if (s, o) in self.pos_pair2info.keys():
+				for rel in self.pos_pair2info[(s, o)]:
+					if rel not in self.pair2info[(s, o)]:
+						self.pair2info[(s, o)][rel] = {'file_sents': list(self.pos_pair2info[(s, o)][rel])}
+						self.pair2info[(s, o)][rel]['source'] = ['pos tagger']
+					else:
+						self.pair2info[(s, o)][rel]['file_sents'] += list(self.pos_pair2info[(s, o)][rel])
+						self.pair2info[(s, o)][rel]['source'] += ['pos tagger']
+
+			if (s, o) in self.openie_pair2info.keys():
+				for rel in self.openie_pair2info[(s, o)]:
+					if rel not in self.pair2info[(s, o)]:
+						self.pair2info[(s, o)][rel] = {'file_sents': list(self.openie_pair2info[(s, o)][rel])}
+						self.pair2info[(s, o)][rel]['source'] = ['openie']
+					else:
+						self.pair2info[(s, o)][rel]['file_sents'] += list(self.openie_pair2info[(s, o)][rel])
+						self.pair2info[(s, o)][rel]['source'] += ['openie']
+
+			if (s, o) in self.dep_pair2info.keys():
+				for rel in self.dep_pair2info[(s, o)]:
+					if rel not in self.pair2info[(s, o)]:
+						self.pair2info[(s, o)][rel] = {'file_sents': list(self.dep_pair2info[(s, o)][rel])}
+						self.pair2info[(s, o)][rel]['source'] = ['dependency tagger']
+					else:
+						self.pair2info[(s, o)][rel]['file_sents'] += list(self.dep_pair2info[(s, o)][rel])
+						self.pair2info[(s, o)][rel]['source'] += ['dependency tagger']
+
+
 	def collectInfo(self):
 		pairs = set(self.dygiepp_pair2info.keys()) | set(self.llm_pair2info.keys()) | set(self.pos_pair2info.keys()) | set(self.openie_pair2info.keys()) | set(self.dep_pair2info.keys())
 		
@@ -42,7 +96,7 @@ class KGDataDumper:
 			if (s,o) in self.dygiepp_pair2info.keys():
 				for rel in self.dygiepp_pair2info[(s,o)]:
 					if rel not in self.pair2info[(s,o)]:
-						self.pair2info[(s,o)][rel] = {'files' : list(self.dygiepp_pair2info[(s,o)][rel])}
+						self.pair2info[(s,o)][rel] = {'file' : list(self.dygiepp_pair2info[(s,o)][rel])}
 						self.pair2info[(s,o)][rel]['source'] = ['dygiepp']				
 					else:
 						self.pair2info[(s,o)][rel]['files'] += list(self.dygiepp_pair2info[(s,o)][rel])
@@ -87,7 +141,8 @@ class KGDataDumper:
 						self.pair2info[(s,o)][rel]['source'] += ['dependency tagger']
 
 
-
+## This function harmonizes entity mappings from different knowledge sources (OpenAlex, CSO, DBpedia, Wikidata)
+# into a single unified knowledge graph (CSKG). It ensures consistent entity naming (using the longest label), consolidation of duplicate entities from different sources
 	def mergeEntities(self):
 
 		openalex2cskg = {}
@@ -279,17 +334,17 @@ class KGDataDumper:
 
 			for rel in self.pair2info[(s,o)]:
 				if s_cskg != o_cskg:
-					self.triples += [(s_cskg, rel, o_cskg, len(set(self.pair2info[(s,o)][rel]['files'])), self.pair2info[(s,o)][rel]['source'], self.pair2info[(s,o)][rel]['files'], stype, otype)]
+					self.triples += [(s_cskg, rel, o_cskg, len(set(self.pair2info[(s,o)][rel]['file_sents'])), self.pair2info[(s,o)][rel]['source'], self.pair2info[(s,o)][rel]['file_sents'], stype, otype)]
 
 
 		# merging triples after entity mapping and merging
 		triples2info = {}
-		for (s, p, o, support, sources, files, stype, otype) in self.triples:
+		for (s, p, o, support, sources, fileSents, stype, otype) in self.triples:
 			if (s,p,o) not in triples2info.keys():
 				triples2info[(s,p,o)] = {
-					'support' : len(files),
+					'support' : len(fileSents),
 					'sources' : set(sources),
-					'files' : set(files),
+					'fileSents' : set(fileSents),
 					'subj_type' : stype,
 					'obj_type' : otype,
 					'source_len': len(sources) # add the number of suources based on the definition of support
@@ -298,11 +353,11 @@ class KGDataDumper:
 				new_sources = triples2info[(s,p,o)]['sources'] | set(sources)
 				triples2info[(s,p,o)]['sources'] = new_sources
 
-				new_files = triples2info[(s,p,o)]['files'] | set(files)
-				triples2info[(s,p,o)]['files'] = new_files
+				new_fileSents = triples2info[(s,p,o)]['fileSents'] | set(fileSents)
+				triples2info[(s,p,o)]['fileSents'] = new_fileSents
 
 				triples2info[(s,p,o)]['source_len'] = len(new_sources)
-				triples2info[(s,p,o)]['support'] = len(new_files)
+				triples2info[(s,p,o)]['support'] = len(new_fileSents)
 
 		#saving merged triples in dataframe
 		subjs = []
@@ -310,7 +365,7 @@ class KGDataDumper:
 		objs = []
 		supports = []
 		sources = []
-		files = []
+		fileSents = []
 		subj_types = []
 		obj_types = []
 		source_lens = []
@@ -320,12 +375,12 @@ class KGDataDumper:
 			objs += [o]
 			supports += [triples2info[(s,p,o)]['support']]
 			sources += [triples2info[(s,p,o)]['sources']]
-			files += [triples2info[(s,p,o)]['files']]
+			fileSents += [triples2info[(s,p,o)]['fileSents']]
 			subj_types += [triples2info[(s,p,o)]['subj_type']]
 			obj_types += [triples2info[(s,p,o)]['obj_type']]
 			source_lens += [triples2info[(s,p,o)]['source_len']]
 
-		merged_triples = pd.DataFrame({'subj' : subjs, 'rel' : rels, 'obj' : objs, 'support' : supports, 'sources' : sources, 'files' : files, 'subj_type' : subj_types, 'obj_type' : obj_types, 'source_len': source_lens})
+		merged_triples = pd.DataFrame({'subj' : subjs, 'rel' : rels, 'obj' : objs, 'support' : supports, 'sources' : sources, 'fileSents' : fileSents, 'subj_type' : subj_types, 'obj_type' : obj_types, 'source_len': source_lens})
 		merged_triples.sort_values(by=['support'], inplace=True)
 		merged_triples.to_csv(self.triples_csv_filename, index=False)
 
@@ -347,7 +402,7 @@ class KGDataDumper:
 		if not os.path.exists('./cskg_data/'):
 			os.makedirs('./cskg_data/')
 
-		self.collectInfo()
+		self.collectInfo_w_sentIndexes()
 		self.mergeEntities()
 		self.mergeEntitiesEuristic()
 		self.createTriplesData()

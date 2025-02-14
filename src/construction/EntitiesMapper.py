@@ -36,13 +36,13 @@ class EntitiesMapper:
 		self.open_alex_wikidata_mapping = {}
 
 		self.cso_map = {}
-		self.dbpedia_map = {}
+		#self.dbpedia_map = {}
 		self.emb_map = {}
 		self.g = nx.Graph()
 
 		self.csoResourcePath = '../../resources/CSO.3.1.csv'
 		self.aecoResourcePath = '../../resources/AECO_domain_label_mapping.json'
-		self.openalexResourcePath = '../../resources/openalex_wikidata_concepts.json'
+		self.openalexResourcePath = '../../resources/wikidata_aeco.json'
 		self.mappedTriples = {} # main output of this class
 
 
@@ -184,7 +184,7 @@ class EntitiesMapper:
 		print('> Mapped to Wikidata:', len(self.e2wikidata))
 		print(self.e2wikidata)
 
-	def build_aeco_ent_wikidata_map(self):
+	def load_aeco_ent_wikidata_map(self):
 		print('loading the aeco_ent_wikidata_map: ')
 		with open(self.aecoResourcePath, 'r') as file:
 			data = json.load(file)
@@ -215,7 +215,7 @@ class EntitiesMapper:
 			return
 
 		### build the total mapping {label:wikidataresource} for the AECO domain:
-		self.build_aeco_ent_wikidata_map()
+		self.load_aeco_ent_wikidata_map()
 
 		# print('sorting entities...')
 		entities_to_explore = sorted(entities_to_explore, key=lambda x: len(x), reverse=True)
@@ -291,6 +291,8 @@ class EntitiesMapper:
 				self.g.add_edge(self.e2id[s], self.e2id[o])
 		'''
 
+
+### This is not used at the moment!
 	def linkThroughDBpediaSpotLight(self):
 		print('- \t >> Mapping with dbpedia started')
 		
@@ -348,6 +350,7 @@ class EntitiesMapper:
 		pickle_out.close()
 		print('- \t >> Mapped to DBpedia:', len(self.e2dbpedia))
 
+### This is not used at the moment!
 	def linkThroughLocalDBpediaSpotLight(self):
 		print('- \t >> Mapping with dbpedia started')
 
@@ -446,13 +449,15 @@ class EntitiesMapper:
 			self.e2cso = pickle.load(f)
 			f.close()
 		p_cso.start()
-			
+
+
 		if os.path.exists("../../resources/e2dbpedia.pickle"):
 			f = open("../../resources/e2dbpedia.pickle","rb")
 			self.e2dbpedia = pickle.load(f)
 			f.close()
-		p_dbpedia.start()
-			
+		#p_dbpedia.start()
+
+
 		if os.path.exists("../../resources/e2wikidata.pickle"):
 			f = open("../../resources/e2wikidata.pickle","rb")
 			self.e2wikidata = pickle.load(f)
@@ -465,8 +470,8 @@ class EntitiesMapper:
 		except: pass 
 		try: p_wikidata.join() 
 		except: pass 
-		try: p_dbpedia.join()
-		except: pass 
+		#try: p_dbpedia.join()
+		#except: pass
 
 	
 	def run(self):
