@@ -22,6 +22,7 @@ class EntitiesValidator:
 		self.csoTopics = set()
 		self.magTopics = set()
 		self.wikidata_concepts = {}
+		self.global_acronyms = {}
 		self.validEntities = set()
 		self.blacklist = set()
 
@@ -57,13 +58,14 @@ class EntitiesValidator:
 	def loadMAGTopics(self):
 		for filename in os.listdir(self.mag_topics_dir):
 			topics = []
-			if filename[-5:] == '.json': 
+			if filename[-5:] == '.json':
 				f = open(self.mag_topics_dir + filename, 'r')
 				for row in f:
 					paper_data = json.loads(row.strip())
 					topics += paper_data['_source']['topics']
 				f.close()
 		self.magTopics = set(topics)
+
 
 
 	def validation(self):

@@ -8,7 +8,6 @@ import pickle
 import json
 import os
 import gc
-from collections import defaultdict
 
 class TriplesGenerator:
 	def __init__(self):
@@ -19,6 +18,8 @@ class TriplesGenerator:
 		self.pos2files = {}
 		self.dependency2files = {}
 		self.data_extracted_dir = '../../outputs/extracted_triples/'
+		self.acro_output_dir = '../../outputs/extracted_triples/acronyms'
+		self.global_acronyms = {}
 		self.e2selected_type = {}
 		self.e2openalex = {}
 		self.e2cso = {} 
@@ -35,8 +36,10 @@ class TriplesGenerator:
 			dic[(s,p,o)] += [doc_key]
 
 	# updated method to map triple to pairs (doc_key, sent_index) instead of to doc_key only
-	def addDataInTripleDictSentences(dic, triples_list, doc_key):
+	def addDataInTripleDictSentences(self, dic, triples_list, doc_key):
 		for (s, p, o, sent_index) in triples_list:
+			if (s, p, o) not in dic:
+				dic[(s, p, o)] = []
 			dic[(s, p, o)].append((doc_key, sent_index))
 
 	def loadData(self):
@@ -92,7 +95,73 @@ class TriplesGenerator:
 		self.dependency2files = self.applyCleanerMap(self.dependency2files, cleaner_map)
 
 	###################################################################################################################################
-	
+
+	########### Mapping Entities to Global-Level Acronyms ##################################################################################################
+
+	def load_global_acronyms(self):
+		mappings_list = []
+		for filename in os.listdir(self.acro_output_dir):
+			if filename.endswith(".json"):  # Process only JSON files
+				file_path = os.path.join(self.acro_output_dir, filename)
+				try:
+					with open(file_path, "r", encoding="utf-8") as file:
+						data = json.load(file)
+						mappings_list.append(data)
+				except Exception as e:
+					print(f"Error reading {filename}: {e}")
+		merged_acronyms = {}
+		for d in mappings_list:
+			merged_acronyms.update(d)  # Updates with the latest dictionary
+		self.global_acronyms = merged_acronyms
+
+
+
+	def applyAcronymMap(self, relations2files, global_acronyms):
+		tool_triples2files = {}
+		for (s, p, o), (files_sents) in relations2files.items():
+			if s.lower() in global_acronyms and o.lower() in global_acronyms:
+				if (global_acronyms[s.lower()], p, global_acronyms[o.lower()]) in tool_triples2files:
+					tool_triples2files[(global_acronyms[s.lower()], p, global_acronyms[o.lower()])].update(set(files_sents))
+				else:
+					tool_triples2files[(global_acronyms[s.lower()], p, global_acronyms[o.lower()])] = set(files_sents)
+			elif s.lower() in global_acronyms:
+				if (global_acronyms[s.lower()], p, o) in tool_triples2files:
+					tool_triples2files[(global_acronyms[s.lower()], p, o)].update(set(files_sents))
+				else:
+					tool_triples2files[(global_acronyms[s.lower()], p, o)] = set(files_sents)
+			elif o.lower() in global_acronyms:
+				if (s, p, global_acronyms[o.lower()]) in tool_triples2files:
+					tool_triples2files[(s, p, global_acronyms[o.lower()])].update(set(files_sents))
+				else:
+					tool_triples2files[(s, p, global_acronyms[o.lower()])] = set(files_sents)
+			else:
+				tool_triples2files[(s, p, o)] = set(files_sents)
+
+		return tool_triples2files
+
+	def updateThroughAcronymMap(self, global_acronyms):
+		tmp_entities2files = {}
+		for (e, e_type), fileSents in self.entities2files.items():
+			if e.lower() in global_acronyms:
+				if (global_acronyms.lower(), e_type) in tmp_entities2files:
+					tmp_entities2files[(global_acronyms[e.lower()], e_type)].update(set(fileSents))
+				else:
+					tmp_entities2files[(global_acronyms[e.lower()], e_type)] = set(fileSents)
+			else:
+				tmp_entities2files[(e, e_type)] = set(fileSents)
+
+		self.entities2files = tmp_entities2files
+
+		self.dygiepp2files = self.applyAcronymMap(self.dygiepp2files, global_acronyms)
+		self.llm2files = self.applyAcronymMap(self.llm2files, global_acronyms)
+		self.pos2files = self.applyAcronymMap(self.pos2files, global_acronyms)
+		self.openie2files = self.applyAcronymMap(self.openie2files, global_acronyms)
+		self.dependency2files = self.applyAcronymMap(self.dependency2files, global_acronyms)
+
+	###################################################################################################################################
+
+
+
 	############ Validation of entities ###############################################################################################
 
 	def applyValidEntities(self, validEntities, relations2files):
@@ -208,6 +277,8 @@ class TriplesGenerator:
 			print(' \t- dep triples:\t\t', len(self.dependency2files))
 		elif not ckpts_loading and not ckpts_cleaning and not ckpts_validation and not ckpts_relations_handler and not ckpts_mapping:
 			self.loadData()
+			self.load_global_acronyms()
+			self.updateThroughAcronymMap(self.global_acronyms)
 			self.createCheckpoint('loading', (self.dygiepp2files, self.llm2files, self.openie2files, self.pos2files, self.dependency2files, self.entities2files))
 			print(' \t- dygiepp triples:\t', len(self.dygiepp2files))
 			print(' \t- llm triples:\t', len(self.llm2files))
@@ -217,8 +288,6 @@ class TriplesGenerator:
 		else:
 			print('\t>> skipped')
 		print('--------------------------------------')
-
-
 		print('>> Entity cleaning')
 		if ckpts_cleaning and not ckpts_validation and not ckpts_relations_handler and not ckpts_mapping:
 			print('\t>> Loaded from ckpts')

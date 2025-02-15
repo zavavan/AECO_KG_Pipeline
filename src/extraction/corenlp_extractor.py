@@ -23,6 +23,7 @@ dygiepp_output_dump_dir = '../../outputs/dygiepp_output/'
 llm_output_dump_dir = '../../outputs/llm_output/'
 
 output_dir = '../../outputs/extracted_triples/'
+acro_output_dir = '../../outputs/extracted_triples/acronyms'
 if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         print(f"Folder created: {output_dir}")
@@ -60,9 +61,7 @@ def pairwise(iterable):
 
 
 def mapEntityAcronyms(acronyms, e):
-	if e in acronyms:
-		return acronyms[e]
-	elif e.lower() in acronyms:
+	if e.lower() in acronyms:
 		return acronyms[e.lower()]
 	else:
 		return e
@@ -113,7 +112,7 @@ def detectAcronymsLenient(elist):
 				else:
 					acronyms[acr] = e_cleaned_without_acr
 
-				acronyms[e] = e_cleaned_without_acr
+				acronyms[e.lower()] = e_cleaned_without_acr
 	return acronyms
 
 def getDygieppResults(dresult):
@@ -535,8 +534,8 @@ def extraction(filename,booleanArgument):
 		return
 
 	print('> processing: ' + filename)
-	fw = open(output_dir + filename, 'w+')
-	fw1 = open(output_dir + filename + '_acronyms.txt', 'w+')
+	fw = open(output_dir + filename, 'w+', encoding="utf-8")
+	fw1 = open(output_dir + filename + '_acronyms.txt', 'w+', encoding="utf-8")
 
 
 	print('> processing: ' + filename + ' metadata reading')
@@ -572,6 +571,7 @@ def extraction(filename,booleanArgument):
 
 
 	print('> processing: ' + filename + ' core nlp extraction')
+	acronyms_global = {}
 	for index,paper_id in enumerate(tqdm(paper2metadata.keys(), total=len(paper2metadata.keys()), desc="Processing articles in the dataset:")):
 		if paper_id in paper2dygiepp and paper_id in paper2llm:
 			corenlp_out = {}
@@ -596,13 +596,13 @@ def extraction(filename,booleanArgument):
 				print('llm_entities : ' + str(len(llm_entities)))
 				entities = dygiepp_entities + llm_entities + cso_topics
 				acronyms = detectAcronymsLenient(entities)
-
+				acronyms_global[paper_id] = acronyms
 				openie_triples = getOpenieTriples(corenlp_out, paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'], acronyms)
 				pos_triples = getPosTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] +   paper2metadata[paper_id]['cso_syntactic_topics'],acronyms )
 				dependency_triples = getDependencyTriples(corenlp_out,  paper2dygiepp[paper_id], paper2metadata[paper_id]['cso_semantic_topics'] + paper2metadata[paper_id]['cso_syntactic_topics'], acronyms)
 				entities, dygiepp_triples, llm_triples = manageEntitiesAndDygieepRelations(paper2dygiepp[paper_id],paper2llm[paper_id], entities, acronyms)
 
-				data_input_for_dygepp = json.dump({
+				json.dump({
 						'doc_key' : str(paper_id),
 						'entities' : list(entities),
 						'openie_triples' : list(openie_triples),
@@ -616,6 +616,13 @@ def extraction(filename,booleanArgument):
 				fw1.write('\n')
 			except Exception as e:
 				print(e)
+	merged_acronyms = {}  # Initialize an empty dictionary of global-level acronym mapping
+	for d in list(acronyms_global.values()):  # Iterate over all dictionaries in the list
+		merged_acronyms.update(d)  # Update with the latest dictionary's values
+	with open(acro_output_dir + filename + '_global_acronyms.json', 'w', encoding="utf-8") as fw2:
+		json.dump(merged_acronyms, f, indent=4, ensure_ascii=False)
+
+
 	fw.flush()
 	fw.close()
 	fw1.flush()
