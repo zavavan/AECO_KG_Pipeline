@@ -18,7 +18,7 @@ class TriplesGenerator:
 		self.pos2files = {}
 		self.dependency2files = {}
 		self.data_extracted_dir = '../../outputs/extracted_triples/'
-		self.acro_output_dir = '../../outputs/extracted_triples/acronyms'
+		self.acro_output_dir = '../../outputs/extracted_triples/acronyms/'
 		self.global_acronyms = {}
 		self.e2selected_type = {}
 		self.e2openalex = {}
