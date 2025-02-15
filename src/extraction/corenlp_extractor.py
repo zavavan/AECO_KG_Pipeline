@@ -620,7 +620,7 @@ def extraction(filename,booleanArgument):
 	for d in list(acronyms_global.values()):  # Iterate over all dictionaries in the list
 		merged_acronyms.update(d)  # Update with the latest dictionary's values
 	with open(acro_output_dir + filename + '_global_acronyms.json', 'w', encoding="utf-8") as fw2:
-		json.dump(merged_acronyms, f, indent=4, ensure_ascii=False)
+		json.dump(merged_acronyms, fw2, indent=4, ensure_ascii=False)
 
 
 	fw.flush()
