@@ -14,6 +14,7 @@ import os
 import re
 from tqdm import tqdm
 import Levenshtein
+from pathlib import Path
 
 from functools import partial
 
@@ -23,12 +24,18 @@ dygiepp_output_dump_dir = '../../outputs/dygiepp_output/'
 llm_output_dump_dir = '../../outputs/llm_output/'
 
 output_dir = '../../outputs/extracted_triples/'
-acro_output_dir = '../../outputs/extracted_triples/acronyms/'
 if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         print(f"Folder created: {output_dir}")
 else:
 	print(f"Folder already exists: {output_dir}")
+
+acro_output_dir = '../../outputs/extracted_triples/acronyms/'
+if not os.path.exists(acro_output_dir):
+	os.makedirs(acro_output_dir)
+	print(f"Folder created: {acro_output_dir}")
+else:
+	print(f"Folder already exists: {acro_output_dir}")
 
 stops = list(stopwords.words('english')) + ['it', 'we', 'they', 'its']
 
@@ -535,7 +542,7 @@ def extraction(filename,booleanArgument):
 
 	print('> processing: ' + filename)
 	fw = open(output_dir + filename, 'w+', encoding="utf-8")
-	fw1 = open(output_dir + filename + '_acronyms.txt', 'w+', encoding="utf-8")
+	fw1 = open(output_dir + Path(filename).stem + '_acronyms.txt', 'w+', encoding="utf-8")
 
 
 	print('> processing: ' + filename + ' metadata reading')
@@ -619,7 +626,7 @@ def extraction(filename,booleanArgument):
 	merged_acronyms = {}  # Initialize an empty dictionary of global-level acronym mapping
 	for d in list(acronyms_global.values()):  # Iterate over all dictionaries in the list
 		merged_acronyms.update(d)  # Update with the latest dictionary's values
-	with open(acro_output_dir + filename + '_global_acronyms.json', 'w', encoding="utf-8") as fw2:
+	with open(acro_output_dir + Path(filename).stem + '_global_acronyms.json', 'w', encoding="utf-8") as fw2:
 		json.dump(merged_acronyms, fw2, indent=4, ensure_ascii=False)
 
 
