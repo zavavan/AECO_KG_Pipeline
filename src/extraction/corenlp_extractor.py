@@ -23,7 +23,7 @@ dygiepp_output_dump_dir = '../../outputs/dygiepp_output/'
 llm_output_dump_dir = '../../outputs/llm_output/'
 
 output_dir = '../../outputs/extracted_triples/'
-acro_output_dir = '../../outputs/extracted_triples/acronyms'
+acro_output_dir = '../../outputs/extracted_triples/acronyms/'
 if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         print(f"Folder created: {output_dir}")
