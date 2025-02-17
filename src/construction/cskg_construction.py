@@ -143,7 +143,7 @@ class TriplesGenerator:
 		tmp_entities2files = {}
 		for (e, e_type), fileSents in self.entities2files.items():
 			if e.lower() in global_acronyms:
-				if (global_acronyms.lower(), e_type) in tmp_entities2files:
+				if (e.lower(), e_type) in tmp_entities2files:
 					tmp_entities2files[(global_acronyms[e.lower()], e_type)].update(set(fileSents))
 				else:
 					tmp_entities2files[(global_acronyms[e.lower()], e_type)] = set(fileSents)

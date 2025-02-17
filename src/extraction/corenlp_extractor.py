@@ -153,7 +153,7 @@ def getDygieppResults(dresult):
 
 
 ## This is the function that reads LLM-generated ent/rels from dygiepp pre-formatted file
-# It discards entities with entity token spans > 7 and their corresponding relations:
+# It discards overlapping entities and entities with entity token spans > 7 and their corresponding relations:
 
 
 def getLlmResults(dresult):
@@ -174,17 +174,24 @@ def getLlmResults(dresult):
 	for i in range(len(sentences)):
 		entities = []
 		relations = []
-		for ner_el in dner[i]:
-			if int(ner_el[1]) - int(ner_el[0]) > 6:
+		last_end = -1  # Track the last included entity's end index
+		candidate_entities = dner[i]
+
+		# Sort entities by start index (n1), then by length (longest first)
+		candidate_entities.sort(key=lambda x: (x[0], -(x[1] - x[0])))
+		# discard entities overalpping or with more than 6 tokens
+		for ner_el in candidate_entities:
+			if int(ner_el[1]) - int(ner_el[0]) > 6 or ner_el[0] < last_end :
 				discarded_ent_count+=1
 			else:
 				e = ' '.join(text[ner_el[0]:ner_el[1]+1])
 				e_type = ner_el[2]
 				entities += [(e, e_type)]
 				added_ent_count+=1
-
+				last_end = ner_el[1]  # Update last_end to this entity's end
+		entity_matches = [ent[0] for ent in entities]
 		for relations_el in drelations[i]:
-			if int(relations_el[1]) - int(relations_el[0]) > 6 or int(relations_el[3]) - int(relations_el[2]) > 6 :
+			if (' '.join(text[relations_el[0]:relations_el[1]+1]) not in entity_matches)  or  (' '.join(text[relations_el[2]:relations_el[3]+1]) not in entity_matches) :
 				discarded_rel_count+=1
 			else:
 				r = relations_el[4]

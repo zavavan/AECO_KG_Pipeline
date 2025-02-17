@@ -1,6 +1,8 @@
 from nltk.corpus import wordnet as wn
 from nltk.corpus import wordnet_ic
 from urllib.parse import unquote
+from nltk.corpus import stopwords
+
 import pickle
 import json
 import nltk
@@ -14,7 +16,7 @@ class EntitiesValidator:
 	
 	def __init__(self, entities2files):
 		self.entities2files = entities2files
-		self.inputEntities = set([e for (e, e_type) in entities2files.keys()]),
+		self.inputEntities = set([e for (e, e_type) in entities2files.keys()])
 		self.csoResourcePath = '../../resources/CSO.3.1.csv'
 		self.blacklist_path = '../../resources/blacklist.txt'
 		self.mag_topics_dir = '../../dataset/computer_science/'
@@ -69,13 +71,23 @@ class EntitiesValidator:
 
 
 	def validation(self):
+		swords = set(stopwords.words('english'))
+
 		brown_ic = wordnet_ic.ic('ic-brown.dat')
 		semcor_ic = wordnet_ic.ic('ic-semcor.dat')
 		for e in self.inputEntities:
-			if e in self.blacklist or len(e) <= 2 or e.isdigit() or e[0].isdigit() or len(nltk.word_tokenize(e)) >= 7:# # no blacklist, no 1-character entities, no only numbers, no entities that start with a number, no entities with more than 7 tokens
+			# no blacklist, no 1-character entities, no only numbers, no entities that start with a number, no entities with more than 7 tokens
+			if e in self.blacklist or len(e) <= 2 or e.isdigit() or e[0].isdigit() or len(nltk.word_tokenize(e)) >= 7:#
 				print('invalid entity: ' + str(e))
 				continue
-  
+
+			# no entities made only of stopwords and/or blacklist tokens (e.g. "a methodology")
+			tokens = e.lower().split()  # Tokenize and convert to lowercase
+			filtered_tokens = [t for t in tokens if t not in swords and t not in self.blacklist]
+			if not filtered_tokens:  # Keep only if there is at least one valid token
+				print('invalid entity: ' + str(e))
+				continue
+
 			if e in self.csoTopics:
 				self.validEntities.add(e)
 			elif e in self.magTopics:
