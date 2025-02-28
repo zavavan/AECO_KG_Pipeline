@@ -9,6 +9,13 @@ import json
 import os
 import gc
 
+
+
+debug_output_dir = '../../outputs/extracted_triples/debug/'
+
+
+
+
 class TriplesGenerator:
 	def __init__(self):
 		self.entities2files = {}
@@ -19,6 +26,7 @@ class TriplesGenerator:
 		self.dependency2files = {}
 		self.data_extracted_dir = '../../outputs/extracted_triples/'
 		self.acro_output_dir = '../../outputs/extracted_triples/acronyms/'
+		self.debug_output_dir = '../../outputs/extracted_triples/debug/'
 		self.global_acronyms = {}
 		self.e2selected_type = {}
 		self.e2openalex = {}
@@ -26,6 +34,11 @@ class TriplesGenerator:
 		self.e2dbpedia = {}
 		self.e2wikidata = {}
 
+		if not os.path.exists(self.debug_output_dir):
+			os.makedirs(self.debug_output_dir)
+			print(f"Folder created: {self.debug_output_dir}")
+		else:
+			print(f"Folder already exists: {self.debug_output_dir}")
 
 	############ Data Loading #######################################################################################################
 
@@ -140,23 +153,30 @@ class TriplesGenerator:
 		return tool_triples2files
 
 	def updateThroughAcronymMap(self, global_acronyms):
-		tmp_entities2files = {}
-		for (e, e_type), fileSents in self.entities2files.items():
-			if e.lower() in global_acronyms:
-				if (e.lower(), e_type) in tmp_entities2files:
-					tmp_entities2files[(global_acronyms[e.lower()], e_type)].update(set(fileSents))
+		with open(debug_output_dir + '_entity_acronym_mapping.txt', 'w', encoding="utf-8") as fw:
+			tmp_entities2files = {}
+			mapped_counter=0
+			for (e, e_type), fileSents in self.entities2files.items():
+				if e.lower() in global_acronyms:
+					mapped_counter+=1
+					fw.write(e + ' : ' + global_acronyms[e.lower()] + '\n')
+					if (e.lower(), e_type) in tmp_entities2files:
+						tmp_entities2files[(global_acronyms[e.lower()], e_type)].update(set(fileSents))
+					else:
+						tmp_entities2files[(global_acronyms[e.lower()], e_type)] = set(fileSents)
+
 				else:
-					tmp_entities2files[(global_acronyms[e.lower()], e_type)] = set(fileSents)
-			else:
-				tmp_entities2files[(e, e_type)] = set(fileSents)
+					tmp_entities2files[(e, e_type)] = set(fileSents)
 
-		self.entities2files = tmp_entities2files
+			self.entities2files = tmp_entities2files
 
+		print('Number of acronym mapped entities: ' + str(mapped_counter) + ' out of ' + str(len(self.entities2files)))
 		self.dygiepp2files = self.applyAcronymMap(self.dygiepp2files, global_acronyms)
 		self.llm2files = self.applyAcronymMap(self.llm2files, global_acronyms)
 		self.pos2files = self.applyAcronymMap(self.pos2files, global_acronyms)
 		self.openie2files = self.applyAcronymMap(self.openie2files, global_acronyms)
 		self.dependency2files = self.applyAcronymMap(self.dependency2files, global_acronyms)
+
 
 	###################################################################################################################################
 

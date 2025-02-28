@@ -1,5 +1,6 @@
 # command to run the stanford core nlp server
 # nohup java -mx8g -cp "*" edu.stanford.nlp.pipeline.StanfordCoreNLPServer -port 9050 -timeout 15000 >/dev/null 2>&1 &
+from collections import defaultdict
 
 from stanfordcorenlp import StanfordCoreNLP
 from nltk.corpus import stopwords
@@ -31,12 +32,19 @@ else:
 	print(f"Folder already exists: {output_dir}")
 
 acro_output_dir = '../../outputs/extracted_triples/acronyms/'
+debug_output_dir = '../../outputs/extracted_triples/debug/'
+
 if not os.path.exists(acro_output_dir):
 	os.makedirs(acro_output_dir)
 	print(f"Folder created: {acro_output_dir}")
 else:
 	print(f"Folder already exists: {acro_output_dir}")
 
+if not os.path.exists(debug_output_dir):
+	os.makedirs(debug_output_dir)
+	print(f"Folder created: {debug_output_dir}")
+else:
+	print(f"Folder already exists: {debug_output_dir}")
 stops = list(stopwords.words('english')) + ['it', 'we', 'they', 'its']
 
 # used to check if an openie entity is a real entity of the domain
@@ -203,12 +211,13 @@ def getLlmResults(dresult):
 		sentence2data[i] = {'entities' :  entities, 'relations' : relations}
 
 	## discard relations with entity token spans > 7 (it doesn't alter remove entities):
-	discarded_ent_count=0
-	discarded_rel_count = 0
-	for i,entRel in sentence2data.items():
-		for rel in entRel['relations']:
-			if len(rel[0].split())>7 or len(rel[2].split())>7:
-				entRel['relations'].remove(rel)
+	## not needed anymore as it is done in the loop above
+	#discarded_ent_count=0
+	#discarded_rel_count = 0
+	#for i,entRel in sentence2data.items():
+	#	for rel in entRel['relations']:
+	#		if len(rel[0].split())>7 or len(rel[2].split())>7:
+	#			entRel['relations'].remove(rel)
 
 	#print(f"Imported {added_ent_count} entities from LLM")
 	#print(f"Imported {added_rel_count} relations from LLM")
@@ -631,9 +640,21 @@ def extraction(filename,booleanArgument):
 			except Exception as e:
 				print(e)
 	merged_acronyms = {}  # Initialize an empty dictionary of global-level acronym mapping
+	conflict_count = 0
+	conflict_acronyms = {}
+	key_values = defaultdict(set)
 	for d in list(acronyms_global.values()):  # Iterate over all dictionaries in the list
+		for key, value in d.items():
+			key_values[key].add(value)
 		merged_acronyms.update(d)  # Update with the latest dictionary's values
+	for key, values in key_values.items():
+		if len(values) > 1:
+			conflict_count += 1
+			conflict_acronyms[key] = values
+	print('Number of conflicting acronyms: ' + str(conflict_count))
 	with open(acro_output_dir + Path(filename).stem + '_global_acronyms.json', 'w', encoding="utf-8") as fw2:
+		json.dump(merged_acronyms, fw2, indent=4, ensure_ascii=False)
+	with open(debug_output_dir + Path(filename).stem + '_conflicting_acronyms.json', 'w', encoding="utf-8") as fw2:
 		json.dump(merged_acronyms, fw2, indent=4, ensure_ascii=False)
 
 

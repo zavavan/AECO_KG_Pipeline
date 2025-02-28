@@ -346,7 +346,7 @@ class RDFer:
 		counter = 0
 		stime = time.time()
 		#n_rdf_triples = 0
-		for (s, rel, o, sup, tools, files, stype, otype) in self.gtriples_list:
+		for (s, rel, o, sup, tools, fileSents, stype, otype) in self.gtriples_list:
 			#print(counter)
 			counter += 1
 
@@ -409,11 +409,13 @@ class RDFer:
 						self.g.add((statement_x, self.PROVO.wasGeneratedBy, self.CSKG_NAMESPACE_RESOURCE.DependencyTagger))
 					elif source_type == 'dygiepp':
 						self.g.add((statement_x, self.PROVO.wasGeneratedBy, URIRef(self.CSKG_NAMESPACE_RESOURCE.DyGIEpp)))
+					elif source_type == 'llm':
+						self.g.add((statement_x, self.PROVO.wasGeneratedBy, URIRef(self.CSKG_NAMESPACE_RESOURCE.Llm)))
 
 				#support 
 				self.g.add((statement_x, URIRef(self.CSKG_NAMESPACE + self.HAS_SUPPORT),  Literal(int(sup), datatype=XSD.integer)))
 
-				for file in files:
+				for (file,sent) in fileSents:
 					mag_uri = URIRef(self.CSKG_NAMESPACE_RESOURCE + file.replace('.json', ''))
 					self.g.add((statement_x, self.PROVO.wasDerivedFrom,  mag_uri))
 					self.paper_set.add(file.replace('.json', ''))
@@ -443,11 +445,13 @@ class RDFer:
 							self.g.add((statement_x, self.PROVO.wasGeneratedBy, self.CSKG_NAMESPACE_RESOURCE.DependencyTagger))
 						elif source_type == 'dygiepp':
 							self.g.add((statement_x, self.PROVO.wasGeneratedBy, URIRef(self.CSKG_NAMESPACE_RESOURCE.DyGIEpp)))
+						elif source_type == 'llm':
+							self.g.add((statement_x, self.PROVO.wasGeneratedBy, URIRef(self.CSKG_NAMESPACE_RESOURCE.Llm)))
 
 					#support 
 					self.g.add((statement_x, URIRef(self.CSKG_NAMESPACE + self.HAS_SUPPORT),  Literal(int(sup), datatype=XSD.integer)))
 
-					for file in files:
+					for (file,sent) in fileSents:
 						mag_uri = URIRef(self.CSKG_NAMESPACE_RESOURCE + file.replace('.json', ''))
 						self.g.add((statement_x, self.PROVO.wasDerivedFrom,  mag_uri))
 
@@ -496,7 +500,7 @@ class RDFer:
 			sup = int(r['support'])
 			tools = r['sources']
 			sources_len = r['source_len']
-			files = r['files']
+			fileSents = r['fileSents']
 			stype = r['subj_type']
 			otype = r['obj_type']
 
@@ -525,10 +529,10 @@ class RDFer:
 			########################################################################################
 
 			if (stype, rel + otype, otype) in self.validDomainRelRange or (rel == 'skos:broader/is/hyponym-of' and stype == otype) or rel=='conjunction':
-				gtriples_set.add((s, rel, o, sup, tools, files, stype, otype))
+				gtriples_set.add((s, rel, o, sup, tools, fileSents, stype, otype))
 				valid_onto += 1
 			else:
-				gdiscarded_set.add((s, rel, o, sup, tools, files, stype, otype))
+				gdiscarded_set.add((s, rel, o, sup, tools, fileSents, stype, otype))
 				discarded_by_onto += 1
 
 		print('> valid & discarded high support', valid_onto, discarded_by_onto)
@@ -546,7 +550,7 @@ class RDFer:
 			sup = int(r['support'])
 			tools = r['sources']
 			sources_len = r['source_len']
-			files = r['files']
+			filSents = r['fileSents']
 			stype = r['subj_type']
 			otype = r['obj_type']
 
@@ -575,10 +579,10 @@ class RDFer:
 			########################################################################################
 
 			if (stype, rel + otype, otype) in self.validDomainRelRange or (rel == 'skos:broader/is/hyponym-of' and stype == otype) or rel=='conjunction':
-				gtriples_set.add((s, rel, o, sup, tools, files, stype, otype))
+				gtriples_set.add((s, rel, o, sup, tools, filSents, stype, otype))
 				valid_onto += 1
 			else:
-				gdiscarded_set.add((s, rel, o, sup, tools, files, stype, otype))
+				gdiscarded_set.add((s, rel, o, sup, tools, filSents, stype, otype))
 				discarded_by_onto += 1
 
 		print('> valid & discarded total', valid_onto, discarded_by_onto)
