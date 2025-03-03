@@ -11,11 +11,6 @@ import gc
 
 
 
-debug_output_dir = '../../outputs/extracted_triples/debug/'
-
-
-
-
 class TriplesGenerator:
 	def __init__(self):
 		self.entities2files = {}
@@ -153,7 +148,7 @@ class TriplesGenerator:
 		return tool_triples2files
 
 	def updateThroughAcronymMap(self, global_acronyms):
-		with open(debug_output_dir + '_entity_acronym_mapping.txt', 'w', encoding="utf-8") as fw:
+		with open(debug_output_dir + 'entity_acronym_mapping.txt', 'w', encoding="utf-8") as fw:
 			tmp_entities2files = {}
 			mapped_counter=0
 			for (e, e_type), fileSents in self.entities2files.items():

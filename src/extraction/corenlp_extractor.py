@@ -655,7 +655,7 @@ def extraction(filename,booleanArgument):
 	with open(acro_output_dir + Path(filename).stem + '_global_acronyms.json', 'w', encoding="utf-8") as fw2:
 		json.dump(merged_acronyms, fw2, indent=4, ensure_ascii=False)
 	with open(debug_output_dir + Path(filename).stem + '_conflicting_acronyms.json', 'w', encoding="utf-8") as fw2:
-		json.dump(merged_acronyms, fw2, indent=4, ensure_ascii=False)
+		json.dump(conflict_acronyms, fw2, indent=4, ensure_ascii=False)
 
 
 	fw.flush()

@@ -112,10 +112,14 @@ class EntitiesValidator:
 		self.loadMAGTopics()
 		self.load_open_alex_concepts()
 		self.validation()
-
+		# Writing the valid entities to a CSV file
+		with open(os.path.join(self.debug_output_dir,'valid_entities.csv'), mode="w", newline="") as file:
+			writer = csv.writer(file)
+			for item in self.validEntities:
+				writer.writerow([item])
 
 	def get(self):
-		print(self.validEntities)
+		#print(self.validEntities)
 		return self.validEntities
 
 
@@ -123,7 +127,7 @@ class EntitiesValidator:
 if __name__ == '__main__':
 	ev = EntitiesValidator(['computer science', 'danilo', 'svm', 'machine learning', 'fghjjjj', 'hello', 'method', 'methods', 'test', 'neural networks', 'a320', '320', '320a'], '../dataset/AI_whitelisted_parsed/')
 	ev.run()
-	print(ev.get())
+	#print(ev.get())
 
 
 

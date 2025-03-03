@@ -1,4 +1,4 @@
-
+import json
 
 from nltk.corpus import stopwords
 from urllib.parse import unquote
@@ -14,7 +14,7 @@ class EntitiesCleaner:
 		self.entities = entities
 		self.entity2cleaned_entity = {}
 		self.csoResourcePath = '../../resources/CSO.3.1.csv'
-
+		self.debug_output_dir = '../../outputs/extracted_triples/debug/'
 
 	def cleanPunctuactonStopwords(self):
 		swords = set(stopwords.words('english'))
@@ -27,7 +27,7 @@ class EntitiesCleaner:
 				for c in e:
 					if c in puntuaction_reject:
 						valid_puntuaction = False
-						print('discard entity with invalid punctuation: ' + str(e))
+						#print('discard entity with invalid punctuation: ' + str(e))
 						break
 
 				if valid_puntuaction:
@@ -50,8 +50,8 @@ class EntitiesCleaner:
 				e_lemmatized = ' '.join(e_cleaned_tokens[:-1] + [wnl.lemmatize(e_cleaned_tokens[-1].strip(), 'n')])
 				self.entity2cleaned_entity[e_original] = e_lemmatized
 
-		print('self.entity2cleaned_entity')
-		print(self.entity2cleaned_entity)
+		#print('self.entity2cleaned_entity')
+		#print(self.entity2cleaned_entity)
 
 
 	def toPreferredString(self):
@@ -80,8 +80,12 @@ class EntitiesCleaner:
 	def run(self):
 		self.cleanPunctuactonStopwords()
 		self.lemmatize()
+		with open(self.debug_output_dir + 'entity2cleaned_entity_after_lemmatization_1.json', 'w', encoding="utf-8") as fw2:
+			json.dump(self.entity2cleaned_entity, fw2, indent=4, ensure_ascii=False)
 		self.toPreferredString()
 		self.lemmatize()
+		with open(self.debug_output_dir + 'entity2cleaned_entity_after_lemmatization_2.json', 'w', encoding="utf-8") as fw2:
+			json.dump(self.entity2cleaned_entity, fw2, indent=4, ensure_ascii=False)
 
 	def get(self):
 		return self.entity2cleaned_entity
@@ -89,7 +93,7 @@ class EntitiesCleaner:
 if __name__ == '__main__':
 	ec = EntitiesCleaner(['artificial neural network', 'artificial neural networks', 'back propagation neural networks', 'back-propagation neural network', 'back-propagation neural networks', 'neural network', 'neural network model', '`` Machine Learning (ML)', 'dynamically fused graph network ( dfgn )', 'programming languages', 'python', 'sparql\'s queries', 'it', 'IT', 'rough set', 'programming languages', 'non-rigid registration', 'computer science ontology ( CSO', 'neural networks'])
 	ec.run()
-	print(ec.get())
+	#print(ec.get())
 		
 
 
