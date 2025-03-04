@@ -79,14 +79,14 @@ class EntitiesValidator:
 		for e in self.inputEntities:
 			# no blacklist, no 1-character entities, no only numbers, no entities that start with a number, no entities with more than 7 tokens
 			if e in self.blacklist or len(e) <= 2 or e.isdigit() or e[0].isdigit() or len(nltk.word_tokenize(e)) >= 7:#
-				print('invalid entity: ' + str(e))
+				#print('invalid entity: ' + str(e))
 				continue
 
 			# no entities made only of stopwords and/or blacklist tokens (e.g. "a methodology")
 			tokens = e.lower().split()  # Tokenize and convert to lowercase
 			filtered_tokens = [t for t in tokens if t not in swords and t not in self.blacklist]
 			if not filtered_tokens:  # Keep only if there is at least one valid token
-				print('invalid entity: ' + str(e))
+				#print('invalid entity: ' + str(e))
 				continue
 
 			if e in self.csoTopics:
@@ -102,7 +102,7 @@ class EntitiesValidator:
 					ic_value = semcor_ic['n'][synset.offset()]
 					if ic_value <= 4 and ic_value > 0:
 						valid = False
-						print('invalid entity: ' + str(e) + ' -- ic_value: ' + str(ic_value))
+						#print('invalid entity: ' + str(e) + ' -- ic_value: ' + str(ic_value))
 						break
 				if valid:
 					self.validEntities.add(e)

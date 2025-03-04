@@ -182,7 +182,7 @@ class EntitiesMapper:
 		pickle.dump(self.e2wikidata, pickle_out)
 		pickle_out.close()
 		print('> Mapped to Wikidata:', len(self.e2wikidata))
-		print(self.e2wikidata)
+		#print(self.e2wikidata)
 
 	def load_aeco_ent_wikidata_map(self):
 		print('loading the aeco_ent_wikidata_map: ')
@@ -240,7 +240,7 @@ class EntitiesMapper:
 		pickle.dump(self.e2wikidata, pickle_out)
 		pickle_out.close()
 		print('> Mapped to Wikidata:', len(self.e2wikidata))
-		print(self.e2wikidata)
+		#print(self.e2wikidata)
 
 
 	def linkThroughOpenAlexConcepts(self):
