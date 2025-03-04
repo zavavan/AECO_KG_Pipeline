@@ -148,7 +148,7 @@ class TriplesGenerator:
 		return tool_triples2files
 
 	def updateThroughAcronymMap(self, global_acronyms):
-		with open(debug_output_dir + 'entity_acronym_mapping.txt', 'w', encoding="utf-8") as fw:
+		with open(self.debug_output_dir + 'entity_acronym_mapping.txt', 'w', encoding="utf-8") as fw:
 			tmp_entities2files = {}
 			mapped_counter=0
 			for (e, e_type), fileSents in self.entities2files.items():
