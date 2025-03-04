@@ -158,8 +158,8 @@ class EntitiesMapper:
 									#print('>    alt', binding['altLabel']['value'].lower(), binding['entity']['value'])
 
 				c += 1
-				if c % 100 == 0:
-					print('\t >> Wikidata Processed', c, 'entities in {:.2f} secs.'.format(time.time() - timepoint))
+				if c % 1000 == 0:
+					#print('\t >> Wikidata Processed', c, 'entities in {:.2f} secs.'.format(time.time() - timepoint))
 					pickle_out = open("../../resources/e2wikidata.pickle","wb")
 					pickle.dump(self.e2wikidata, pickle_out)
 					pickle_out.flush()
