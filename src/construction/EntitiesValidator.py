@@ -21,6 +21,7 @@ class EntitiesValidator:
 		self.blacklist_path = '../../resources/blacklist.txt'
 		self.mag_topics_dir = '../../dataset/computer_science/'
 		self.open_alex_wikidata_concepts_path = '../../resources/wikidata_aeco.json'
+		self.debug_output_dir = '../../outputs/extracted_triples/debug/'
 		self.csoTopics = set()
 		self.magTopics = set()
 		self.wikidata_concepts = {}
