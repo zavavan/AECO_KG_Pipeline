@@ -433,9 +433,9 @@ class EntitiesMapper:
 
 	def load(self):
 
-		p_openalex = Process(target=self.linkThroughOpenAlexConcepts())
+		p_openalex = Process(target=self.linkThroughOpenAlexConcepts)
 		p_cso = Process(target=self.linkThroughCSO)
-		p_wikidata = Process(target=self.linkThroughWikidataForAECO())
+		p_wikidata = Process(target=self.linkThroughWikidataForAECO)
 		p_dbpedia = Process(target=self.linkThroughLocalDBpediaSpotLight)
 
 		if os.path.exists("../../resources/e2openalex.pickle"):
@@ -464,12 +464,20 @@ class EntitiesMapper:
 			f.close()
 		p_wikidata.start()
 
-		try: p_openalex.join()
-		except: pass
-		try: p_cso.join() 
-		except: pass 
-		try: p_wikidata.join() 
-		except: pass 
+		# Wait for all processes to finish
+		for p in [p_openalex, p_cso, p_wikidata]:
+			try:
+				p.join()
+			except Exception as e:
+				print(f"Error joining process {p}: {e}")
+
+
+		#try: p_openalex.join()
+		#except: pass
+		#try: p_cso.join()
+		#except: pass
+		#try: p_wikidata.join()
+		#except: pass
 		#try: p_dbpedia.join()
 		#except: pass
 
