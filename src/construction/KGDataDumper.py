@@ -7,6 +7,7 @@ import pickle
 import time
 import csv 
 import os
+import json
 
 class KGDataDumper:
 	def __init__(self, dygiepp_pair2info, llm_pair2info, pos_pair2info, openie_pair2info, dep_pair2info, e2openalex, e2cso, e2dbpedia, e2wikidata, e2type):
@@ -239,7 +240,9 @@ class KGDataDumper:
 			self.cskg2wikidata[cskg_entity] = wde
 
 		print('self.label2cskg_entity')
-		print(self.label2cskg_entity)
+		#print(self.label2cskg_entity)
+		with open(self.debug_output_dir + 'label2cskg_entity_externalMapping.json', 'w', encoding="utf-8") as fw2:
+			json.dump(self.label2cskg_entity, fw2, indent=4, ensure_ascii=False)
 
 	# function used by mergeEntitiesEuristic
 	def mergeEntitiesEmbeddings(self, model, entities):
@@ -252,7 +255,7 @@ class KGDataDumper:
 			ej = entities[j] # entity 
 
 			# since the results are ordered, the loop is stopped when the similarity is lower than 0.9
-			if score < 0.75:
+			if score < 0.70:
 				break
 
 			if ei not in self.label2cskg_entity and ej not in self.label2cskg_entity:
@@ -314,7 +317,9 @@ class KGDataDumper:
 				#print('\t>> tokens to be checked:', wordcount)
 
 		print('self.label2cskg_entity')
-		print(self.label2cskg_entity)
+		with open(self.debug_output_dir + 'label2cskg_entity_embeddingMapping.json', 'w', encoding="utf-8") as fw2:
+			json.dump(self.label2cskg_entity, fw2, indent=4, ensure_ascii=False)
+		#print(self.label2cskg_entity)
 
 	def createTriplesData(self):
 
