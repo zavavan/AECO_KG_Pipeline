@@ -5,7 +5,7 @@ from urllib.parse import unquote
 import nltk
 import csv
 import re
-
+import os
 
 class EntitiesCleaner:
 
@@ -78,13 +78,19 @@ class EntitiesCleaner:
 
 
 	def run(self):
+		#print input entities before cleaning for debugging:
+		with open(os.path.join(self.debug_output_dir, 'inputEntitiesFromExtraction.csv'), mode="w", newline="") as file:
+			writer = csv.writer(file)
+			for item in self.entities:
+				writer.writerow([item])
+
 		self.cleanPunctuactonStopwords()
 		self.lemmatize()
-		with open(self.debug_output_dir + '/entity2cleaned_entity_after_lemmatization_1.json', 'w', encoding="utf-8") as fw1:
+		with open(os.path.join(self.debug_output_dir, 'entity2cleaned_entity_after_lemmatization_1.json'), 'w', encoding="utf-8") as fw1:
 			json.dump(self.entity2cleaned_entity, fw1, indent=4, ensure_ascii=False)
 		self.toPreferredString()
 		self.lemmatize()
-		with open(self.debug_output_dir + '/entity2cleaned_entity_after_lemmatization_2.json', 'w', encoding="utf-8") as fw2:
+		with open(os.path.join(self.debug_output_dir, '/entity2cleaned_entity_after_lemmatization_2.json'), 'w', encoding="utf-8") as fw2:
 			json.dump(self.entity2cleaned_entity, fw2, indent=4, ensure_ascii=False)
 
 	def get(self):

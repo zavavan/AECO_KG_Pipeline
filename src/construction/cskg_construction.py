@@ -379,7 +379,7 @@ class TriplesGenerator:
 			gc.collect()
 			self.createCheckpoint('relations_handler', (self.dygiepp_pair2info, self.llm_pair2info, self.openie_pair2info, self.pos_pair2info, self.dep_pair2info, self.entities2files))
 			print(' \t- dygiepp pairs:\t', len(self.dygiepp_pair2info))
-			print(self.dygiepp_pair2info)
+			#print(self.dygiepp_pair2info)
 			print(' \t- llm pairs:\t', len(self.llm_pair2info))
 			print(self.llm_pair2info)
 			print(' \t- openie pairs:\t\t', len(self.openie_pair2info))
