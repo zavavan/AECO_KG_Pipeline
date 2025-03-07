@@ -16,29 +16,31 @@ class EntitiesCleaner:
 		self.csoResourcePath = '../../resources/CSO.3.1.csv'
 		self.debug_output_dir = '../../outputs/extracted_triples/debug/'
 
+
 	def cleanPunctuactonStopwords(self):
 		swords = set(stopwords.words('english'))
+		#regex pattern for chinese/japanese/Korean characters
+		cjk_pattern = re.compile(r'[\u4e00-\u9fff\u3400-\u4dbf\u3040-\u30ff\u31f0-\u31ff\u3000-\u303f]')
 		regex_puntuaction_ok = re.compile('[%s]' % re.escape("\"_`.'")) # possible characters
 		regex_acronym = re.compile("\(.*") # remove acronyms e.g., machine learning (ml) -> machine learning
-		puntuaction_reject = list("!#$%*+,/:;<=>?@%=[]^{|}~/{}") + ['\\']
+		puntuaction_reject = list("!#$%*+,/:;<=>?@=[]^{|}~/{}") + ['\\']
 		for e in self.entities:
 			if e.lower() not in swords:
 				valid_puntuaction = True
 				for c in e:
-					if c in puntuaction_reject:
+					if c in puntuaction_reject or cjk_pattern.search(c):
 						valid_puntuaction = False
 						#print('discard entity with invalid punctuation: ' + str(e))
 						break
 
 				if valid_puntuaction:
-					e_fixed = e.replace('`', '').replace('\'s', '').replace('’s', '').replace('’', '').replace('\'', '').replace('(', '').replace(')', '').replace('-', ' ').replace('.', '').strip()
+					e_fixed = e.replace('`', '').replace('\'s', '').replace('’s', '').replace('’', '').replace('\'', '').replace('(', '').replace(')', '').replace('.', '').replace('“', '').replace('”','').replace(' – ','-').replace(' - ','-').strip()
 					e_fixed = regex_acronym.sub('', e_fixed).strip()
 					e_fixed = regex_puntuaction_ok.sub('_', e_fixed)
 					e_fixed = re.sub(r'\s+', ' ', e_fixed)
 					e_fixed = e_fixed.lower()
 					
 					self.entity2cleaned_entity[e] = e_fixed
-
 
 
 	def lemmatize(self):
@@ -75,7 +77,6 @@ class EntitiesCleaner:
 				e_cleaned = self.entity2cleaned_entity[e_original]
 				if e_cleaned in csoTopics2preferredLabel: 
 					self.entity2cleaned_entity[e_original] = csoTopics2preferredLabel[e_cleaned]
-
 
 	def run(self):
 		#print input entities before cleaning for debugging:

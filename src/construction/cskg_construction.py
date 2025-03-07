@@ -406,7 +406,7 @@ class TriplesGenerator:
 		else:
 			print('\t>> skipped')
 		print('--------------------------------------')
-
+		exit()
 		print('>> Data dumping and merging')
 		self.entitiesTyping()
 		dumper = KGDataDumper(self.dygiepp_pair2info, self.llm_pair2info,  self.pos_pair2info, self.openie_pair2info, self.dep_pair2info, self.e2openalex, self.e2cso, self.e2dbpedia, self.e2wikidata, self.e2selected_type)

@@ -79,7 +79,10 @@ class EntitiesValidator:
 		semcor_ic = wordnet_ic.ic('ic-semcor.dat')
 		for e in self.inputEntities:
 			# no blacklist, no 1-character entities, no only numbers, no entities that start with a number, no entities with more than 7 tokens
-			if e in self.blacklist or len(e) <= 2 or e.isdigit() or e[0].isdigit() or len(nltk.word_tokenize(e)) >= 7:#
+			if (e in self.blacklist
+					or len(e) <= 2
+						or e.isdigit()
+							or (len(nltk.word_tokenize(e)) >= 7 and not " of " in e)):
 				self.invalidEntities.add(str(e))
 				continue
 
