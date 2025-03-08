@@ -32,6 +32,7 @@ class KGDataDumper:
 		self.triples = []
 
 		self.triples_csv_filename = './cskg_data/cskg_triples.csv'
+		self.debug_output_dir = '../../outputs/extracted_triples/debug/'
 
 	def collectInfo_w_sentIndexes(self):
 		pairs = set(self.dygiepp_pair2info.keys()) | set(self.llm_pair2info.keys()) | set(
