@@ -643,14 +643,22 @@ def extraction(filename,booleanArgument):
 	conflict_count = 0
 	conflict_acronyms = {}
 	key_values = defaultdict(set)
-	for d in list(acronyms_global.values()):  # Iterate over all dictionaries in the list
+	for d in list(acronyms_global.values()):  # Iterate over all dictionaries in the list and add sets of values (in case of conflicting mappings) for each key
 		for key, value in d.items():
 			key_values[key].add(value)
-		merged_acronyms.update(d)  # Update with the latest dictionary's values
-	for key, values in key_values.items():
-		if len(values) > 1:
+
+
+	for k, v in key_values.items():
+		# if acronyms as conflicting mappings, chose the longest one (e.g. "nzeb":["- zero energy building", "net - zero energy building"] --> "nzeb":"net - zero energy building")
+		if len(v) > 1:
 			conflict_count += 1
-			conflict_acronyms[key] = values
+			conflict_acronyms[key] = v
+			merged_acronyms[k] = max(list(v), key=len)
+		#otherwise map to the only available elemennt in the set
+		else:
+			merged_acronyms[k] = next(iter(v), None)
+		# Update with the latest dictionary's values
+		#merged_acronyms.update(d)  # Update with the latest dictionary's values
 	print('Number of conflicting acronyms: ' + str(conflict_count))
 	with open(acro_output_dir + Path(filename).stem + '_global_acronyms.json', 'w', encoding="utf-8") as fw2:
 		json.dump(merged_acronyms, fw2, indent=4, ensure_ascii=False)
