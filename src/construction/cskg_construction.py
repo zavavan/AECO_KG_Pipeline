@@ -381,7 +381,6 @@ class TriplesGenerator:
 			print(' \t- dygiepp pairs:\t', len(self.dygiepp_pair2info))
 			#print(self.dygiepp_pair2info)
 			print(' \t- llm pairs:\t', len(self.llm_pair2info))
-			print(self.llm_pair2info)
 			print(' \t- openie pairs:\t\t', len(self.openie_pair2info))
 			print(' \t- pos pairs:\t\t', len(self.pos_pair2info))
 			print(' \t- dep pairs:\t\t', len(self.dep_pair2info))
@@ -406,7 +405,6 @@ class TriplesGenerator:
 		else:
 			print('\t>> skipped')
 		print('--------------------------------------')
-		exit()
 		print('>> Data dumping and merging')
 		self.entitiesTyping()
 		dumper = KGDataDumper(self.dygiepp_pair2info, self.llm_pair2info,  self.pos_pair2info, self.openie_pair2info, self.dep_pair2info, self.e2openalex, self.e2cso, self.e2dbpedia, self.e2wikidata, self.e2selected_type)

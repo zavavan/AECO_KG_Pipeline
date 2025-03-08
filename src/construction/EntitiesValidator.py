@@ -78,7 +78,7 @@ class EntitiesValidator:
 		brown_ic = wordnet_ic.ic('ic-brown.dat')
 		semcor_ic = wordnet_ic.ic('ic-semcor.dat')
 		for e in self.inputEntities:
-			# no blacklist, no 1-character entities, no only numbers, no entities that start with a number, no entities with more than 7 tokens
+			# no blacklist, no 1-character entities, no only numbers, #no entities that start with a number, no entities with more than 7 tokens
 			if (e in self.blacklist
 					or len(e) <= 2
 						or e.isdigit()
