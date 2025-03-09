@@ -90,7 +90,7 @@ class EntitiesCleaner:
 				if valid_puntuaction:
 					e_fixed = e.replace('`', '').replace('\'s', '').replace('’s', '').replace('’', '').replace('\'', '').replace('(', '').replace(')', '').replace('.', '').replace('“', '').replace('”','').replace(' – ','-').replace(' - ','-').strip()
 					e_fixed = regex_acronym.sub('', e_fixed).strip()
-					e_fixed = regex_puntuaction_ok.sub('_', e_fixed)
+					e_fixed = regex_puntuaction_ok.sub(' ', e_fixed)
 					e_fixed = re.sub(r'\s+', ' ', e_fixed)
 					e_fixed = e_fixed.lower()
 					
