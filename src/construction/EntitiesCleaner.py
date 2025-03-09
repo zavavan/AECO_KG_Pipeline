@@ -73,6 +73,7 @@ class EntitiesCleaner:
 		regex_puntuaction_ok = re.compile('[%s]' % re.escape("\"_`.'")) # possible characters
 		regex_acronym = re.compile("\(.*") # remove acronyms e.g., machine learning (ml) -> machine learning
 		puntuaction_reject = list("!#$%*+,/:;<=>?@=[]^{|}~/{}") + ['\\']
+		endin_dash_pattern = re.compile("(.*)\-")
 
 		#here I iterate on the self.entity2cleaned_entity map, so I get the output of the first step (the fixDanglingDashedEntities method)
 		for e_original in list(self.entity2cleaned_entity.keys()):
@@ -92,7 +93,12 @@ class EntitiesCleaner:
 					e_fixed = regex_acronym.sub('', e_fixed).strip()
 					e_fixed = regex_puntuaction_ok.sub(' ', e_fixed)
 					e_fixed = re.sub(r'\s+', ' ', e_fixed)
+					#remove ending dash chars
+					endin_dash_match = endin_dash_pattern.match(e_fixed)
+					if endin_dash_match:
+						e_fixed = endin_dash_match.group(1).strip()
 					e_fixed = e_fixed.lower()
+					e_fixed = e_fixed.strip()
 					
 					self.entity2cleaned_entity[e_original] = e_fixed
 			else:
