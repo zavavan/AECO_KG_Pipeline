@@ -52,7 +52,9 @@ class EntitiesCleaner:
 			candidates = text_to_entries.get(text, [])
 			if len(candidates) == 1:
 				self.entity2cleaned_entity[original_entry] = candidates[0]
-
+			#clean the unresolved cases: e.g. "- dimensional microclimate simulation tool" --> "microclimate simulation tool"
+			else:
+				self.entity2cleaned_entity[original_entry] = " ".join(text.split()[2:])
 
 	def cleanPunctuactonStopwords(self):
 
@@ -134,14 +136,14 @@ class EntitiesCleaner:
 			writer = csv.writer(file)
 			for item in self.entities:
 				writer.writerow([item])
-
+		self.fixDanglingDashedEntities()
 		self.cleanPunctuactonStopwords()
 		self.lemmatize()
 		with open(os.path.join(self.debug_output_dir, 'entity2cleaned_entity_after_lemmatization_1.json'), 'w', encoding="utf-8") as fw1:
 			json.dump(self.entity2cleaned_entity, fw1, indent=4, ensure_ascii=False)
 		self.toPreferredString()
 		self.lemmatize()
-		with open(os.path.join(self.debug_output_dir, '/entity2cleaned_entity_after_lemmatization_2.json'), 'w', encoding="utf-8") as fw2:
+		with open(os.path.join(self.debug_output_dir, 'entity2cleaned_entity_after_lemmatization_2.json'), 'w', encoding="utf-8") as fw2:
 			json.dump(self.entity2cleaned_entity, fw2, indent=4, ensure_ascii=False)
 
 	def get(self):
