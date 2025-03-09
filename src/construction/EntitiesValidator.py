@@ -52,7 +52,7 @@ class EntitiesValidator:
 
 	def load_open_alex_concepts(self):
 		# Open the file and read its content
-		with open(self.open_alex_wikidata_concepts_path, 'r') as f:
+		with open(self.open_alex_wikidata_concepts_path, 'r', encoding='utf-8') as f:
 			file_content = f.read()
 
 		self.wikidata_concepts = json.loads(file_content)
@@ -79,20 +79,20 @@ class EntitiesValidator:
 		semcor_ic = wordnet_ic.ic('ic-semcor.dat')
 		for e in self.inputEntities:
 			# no blacklist, no 1-character entities, no only numbers, #no entities that start with a number, no entities with more than 7 tokens
-			if (e in self.blacklist
-					or len(e) <= 2
-						or e.isdigit()
-							or (len(nltk.word_tokenize(e)) >= 7 and not " of " in e)):
+			if (e in self.blacklist or len(e) <= 2 or e.isdigit() or (len(nltk.word_tokenize(e)) >= 7 and not " of " in e)):
 				self.invalidEntities.add(str(e))
 				continue
 
 			# no entities made only of stopwords and/or blacklist tokens (e.g. "a methodology")
 			tokens = e.lower().split()  # Tokenize and convert to lowercase
-			filtered_tokens = [t for t in tokens if t not in swords and t not in self.blacklist]
-			if not filtered_tokens:  # Keep only if there is at least one valid token
+			non_stopw_tokens = [t for t in tokens if t not in swords]
+			if not non_stopw_tokens:
 				self.invalidEntities.add(str(e))
 				continue
-
+			elif len(non_stopw_tokens) == 1 and non_stopw_tokens[0] in self.blacklist:
+				self.invalidEntities.add(str(e))
+				continue
+			
 			if e in self.csoTopics:
 				self.validEntities.add(e)
 			elif e in self.magTopics:
