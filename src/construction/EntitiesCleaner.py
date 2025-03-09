@@ -54,7 +54,13 @@ class EntitiesCleaner:
 				self.entity2cleaned_entity[original_entry] = candidates[0]
 			#clean the unresolved cases: e.g. "- dimensional microclimate simulation tool" --> "microclimate simulation tool"
 			else:
-				self.entity2cleaned_entity[original_entry] = " ".join(text.split()[2:])
+				intermediate = " ".join(text.split()[2:])
+				dash_match = dash_pattern.match(intermediate)
+				if dash_match:
+					text = dash_match.group(1).strip()
+					self.entity2cleaned_entity[original_entry] = " ".join(text.split()[2:])
+				else:
+					self.entity2cleaned_entity[original_entry] = intermediate
 
 	def cleanPunctuactonStopwords(self):
 
