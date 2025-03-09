@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 
 from nltk.corpus import stopwords
 from urllib.parse import unquote
@@ -16,21 +17,65 @@ class EntitiesCleaner:
 		self.csoResourcePath = '../../resources/CSO.3.1.csv'
 		self.debug_output_dir = '../../outputs/extracted_triples/debug/'
 
+	def fixDanglingDashedEntities(self):
+
+		#this method akes the list of input entities and for the entries that start with "- <tokens>" or "– <tokens>"  and that have only one other entity of form "<token> - <tokens>, map "- <tokens>" to "<token> - <tokens>
+
+		#first, initialize the mapping entity2cleaned_entity to mapping each original entity to itself (this is because the cleanPunctuactonStopwords methods afterwords needs to
+		# work on the total of input entities, and discard only the ones who are not satisfying the constraints)
+
+		for e in self.entities:
+			self.entity2cleaned_entity[e] = e
+		print('Total number of entities coming from extraction process: ' + str(len(self.entity2cleaned_entity)))
+
+		dash_pattern = re.compile(r"^[\-\–] (.+)$")  # Matches "- <text>" or "– <text>"
+		token_dash_pattern = re.compile(r"^(.+)[\-\–] (.+)$")  # Matches "<token> - <text>" or "<token> – <text>"
+		# First pass: build a mapping from <text> -> list of full entries that end with " - <text>"
+		text_to_entries = defaultdict(list)
+		dash_entries = []
+		for e in self.entities:
+			e = e.strip()
+
+			dash_match = dash_pattern.match(e)
+			if dash_match:
+				# This is a "- <text>" or "– <text>" form
+				text = dash_match.group(1).strip()
+				dash_entries.append((e, text))
+			else:
+				token_match = token_dash_pattern.match(e)
+				if token_match:
+					text = token_match.group(2).strip()
+					text_to_entries[text].append(e)
+
+		# Second pass: map each "- <text>" entry to corresponding "<token> - <text>" if only one exists
+		for original_entry, text in dash_entries:
+			candidates = text_to_entries.get(text, [])
+			if len(candidates) == 1:
+				self.entity2cleaned_entity[original_entry] = candidates[0]
+
 
 	def cleanPunctuactonStopwords(self):
+
+		print('Total number of entities upon applying punctuation cleaning: ' + str(len(self.entity2cleaned_entity)))
+
 		swords = set(stopwords.words('english'))
 		#regex pattern for chinese/japanese/Korean characters
-		cjk_pattern = re.compile(r'[\u4e00-\u9fff\u3400-\u4dbf\u3040-\u30ff\u31f0-\u31ff\u3000-\u303f]')
+		cjk_pattern = re.compile(r'[\u4e00-\u9fff\u3400-\u4dbf\u3040-\u30ff\u31f0-\u31ff\u3000-\u303f\uac00-\ud7af]')
 		regex_puntuaction_ok = re.compile('[%s]' % re.escape("\"_`.'")) # possible characters
 		regex_acronym = re.compile("\(.*") # remove acronyms e.g., machine learning (ml) -> machine learning
 		puntuaction_reject = list("!#$%*+,/:;<=>?@=[]^{|}~/{}") + ['\\']
-		for e in self.entities:
+
+		#here I iterate on the self.entity2cleaned_entity map, so I get the output of the first step (the fixDanglingDashedEntities method)
+		for e_original in list(self.entity2cleaned_entity.keys()):
+			e = self.entity2cleaned_entity[e_original]
+
 			if e.lower() not in swords:
 				valid_puntuaction = True
 				for c in e:
 					if c in puntuaction_reject or cjk_pattern.search(c):
 						valid_puntuaction = False
 						#print('discard entity with invalid punctuation: ' + str(e))
+						del self.entity2cleaned_entity[e_original]
 						break
 
 				if valid_puntuaction:
@@ -40,10 +85,15 @@ class EntitiesCleaner:
 					e_fixed = re.sub(r'\s+', ' ', e_fixed)
 					e_fixed = e_fixed.lower()
 					
-					self.entity2cleaned_entity[e] = e_fixed
-
+					self.entity2cleaned_entity[e_original] = e_fixed
+			else:
+				del self.entity2cleaned_entity[e_original]
 
 	def lemmatize(self):
+
+		print('Total number of entities upon applying lemmatization: ' + str(len(self.entity2cleaned_entity)))
+
+
 		wnl = nltk.stem.WordNetLemmatizer()
 		for e_original in list(self.entity2cleaned_entity.keys()):
 			e_cleaned = self.entity2cleaned_entity[e_original]

@@ -1,3 +1,4 @@
+from collections import defaultdict
 
 from EntitiesValidator import EntitiesValidator
 from RelationsManager import RelationsManager
@@ -117,9 +118,20 @@ class TriplesGenerator:
 						mappings_list.append(data)
 				except Exception as e:
 					print(f"Error reading {filename}: {e}")
-		merged_acronyms = {}
+		merged_acronyms = {}  # Initialize an empty dictionary of global-level acronym mapping
+		key_values = defaultdict(set)
 		for d in mappings_list:
-			merged_acronyms.update(d)  # Updates with the latest dictionary
+			for key, value in d.items():
+				key_values[key].add(value)
+
+		for k, v in key_values.items():
+			# if acronyms as conflicting mappings, chose the longest one (e.g. "nzeb":["- zero energy building", "net - zero energy building"] --> "nzeb":"net - zero energy building")
+			if len(v) > 1:
+				merged_acronyms[k] = max(list(v), key=len)
+			# otherwise map to the only available elemennt in the set
+			else:
+				merged_acronyms[k] = next(iter(v), None)
+
 		self.global_acronyms = merged_acronyms
 
 
