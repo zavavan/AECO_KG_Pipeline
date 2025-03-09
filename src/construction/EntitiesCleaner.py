@@ -55,11 +55,11 @@ class EntitiesCleaner:
 				self.entity2cleaned_entity[original_entry] = candidates[0]
 			#clean the unresolved cases: e.g. "- dimensional microclimate simulation tool" --> "microclimate simulation tool"
 			else:
-				intermediate = " ".join(text.split()[2:])
+				intermediate = " ".join(text.split()[1:])
 				dash_match = dash_pattern.match(intermediate)
 				if dash_match:
 					text = dash_match.group(1).strip()
-					self.entity2cleaned_entity[original_entry] = " ".join(text.split()[2:])
+					self.entity2cleaned_entity[original_entry] = " ".join(text.split()[1:])
 				else:
 					self.entity2cleaned_entity[original_entry] = intermediate
 
