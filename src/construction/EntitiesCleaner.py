@@ -1,4 +1,5 @@
 import json
+import string
 from collections import defaultdict
 
 from nltk.corpus import stopwords
@@ -76,8 +77,8 @@ class EntitiesCleaner:
 		#here I iterate on the self.entity2cleaned_entity map, so I get the output of the first step (the fixDanglingDashedEntities method)
 		for e_original in list(self.entity2cleaned_entity.keys()):
 			e = self.entity2cleaned_entity[e_original]
-
-			if e.lower() not in swords:
+			# remove entity which is a stopword or a punctuation char
+			if e.lower() not in swords and e.lower() not in string.punctuation:
 				valid_puntuaction = True
 				for c in e:
 					if c in puntuaction_reject or cjk_pattern.search(c):
