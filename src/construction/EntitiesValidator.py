@@ -92,7 +92,7 @@ class EntitiesValidator:
 			elif len(non_stopw_tokens) == 1 and non_stopw_tokens[0] in self.blacklist:
 				self.invalidEntities.add(str(e))
 				continue
-			
+
 			if e in self.csoTopics:
 				self.validEntities.add(e)
 			elif e in self.magTopics:
