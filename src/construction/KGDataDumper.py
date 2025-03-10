@@ -152,6 +152,12 @@ class KGDataDumper:
 		wikidata2cskg = {}
 		dbpedia2cskg = {}
 
+		print('size of external resource mappings')
+		print("e2openalex: " + str(len(self.e2openalex)))
+		print("e2cso: " + str(len(self.e2cso)))
+		print("e2dbpedia: " + str(len(self.e2dbpedia)))
+		print("e2wikidata: " + str(len(self.e2wikidata)))
+
 		for (s,o) in self.pair2info:
 
 			if s in self.e2openalex:
@@ -241,7 +247,7 @@ class KGDataDumper:
 			self.cskg2wikidata[cskg_entity] = wde
 
 		print('self.label2cskg_entity')
-		#print(self.label2cskg_entity)
+		print(len(self.label2cskg_entity))
 		with open(os.path.join(self.debug_output_dir, 'label2cskg_entity_externalMapping.json'), 'w', encoding="utf-8") as fw1:
 			json.dump(self.label2cskg_entity, fw1, indent=4, ensure_ascii=False)
 
