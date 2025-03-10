@@ -186,7 +186,7 @@ class EntitiesMapper:
 
 	def load_aeco_ent_wikidata_map(self):
 		print('loading the aeco_ent_wikidata_map: ')
-		with open(self.aecoResourcePath, 'r') as file:
+		with open(self.aecoResourcePath, 'r', encoding='utf-8') as file:
 			data = json.load(file)
 
 		data_lower = dict()
@@ -199,7 +199,7 @@ class EntitiesMapper:
 
 	def buildOpenAlexConcepts(self):
 		print('loading the open_alex_wikidata_concept_map: ')
-		with open(self.openalexResourcePath, 'r') as file:
+		with open(self.openalexResourcePath, 'r', encoding='utf-8') as file:
 			data = json.load(file)
 
 		self.open_alex_wikidata_mapping = data
@@ -470,16 +470,6 @@ class EntitiesMapper:
 				p.join()
 			except Exception as e:
 				print(f"Error joining process {p}: {e}")
-
-
-		#try: p_openalex.join()
-		#except: pass
-		#try: p_cso.join()
-		#except: pass
-		#try: p_wikidata.join()
-		#except: pass
-		#try: p_dbpedia.join()
-		#except: pass
 
 	
 	def run(self):

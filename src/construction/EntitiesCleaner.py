@@ -99,7 +99,7 @@ class EntitiesCleaner:
 						e_fixed = endin_dash_match.group(1).strip()
 					e_fixed = e_fixed.lower()
 					e_fixed = e_fixed.strip()
-					
+
 					self.entity2cleaned_entity[e_original] = e_fixed
 			else:
 				del self.entity2cleaned_entity[e_original]

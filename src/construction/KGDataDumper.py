@@ -242,8 +242,8 @@ class KGDataDumper:
 
 		print('self.label2cskg_entity')
 		#print(self.label2cskg_entity)
-		with open(self.debug_output_dir + 'label2cskg_entity_externalMapping.json', 'w', encoding="utf-8") as fw2:
-			json.dump(self.label2cskg_entity, fw2, indent=4, ensure_ascii=False)
+		with open(os.path.join(self.debug_output_dir, 'label2cskg_entity_externalMapping.json'), 'w', encoding="utf-8") as fw1:
+			json.dump(self.label2cskg_entity, fw1, indent=4, ensure_ascii=False)
 
 	# function used by mergeEntitiesEuristic
 	def mergeEntitiesEmbeddings(self, model, entities):
@@ -318,7 +318,7 @@ class KGDataDumper:
 				#print('\t>> tokens to be checked:', wordcount)
 
 		print('self.label2cskg_entity')
-		with open(self.debug_output_dir + 'label2cskg_entity_embeddingMapping.json', 'w', encoding="utf-8") as fw2:
+		with open(os.path.join(self.debug_output_dir,'label2cskg_entity_embeddingMapping.json'), 'w', encoding="utf-8") as fw2:
 			json.dump(self.label2cskg_entity, fw2, indent=4, ensure_ascii=False)
 		#print(self.label2cskg_entity)
 
