@@ -19,6 +19,8 @@ class EntitiesValidator:
 		self.inputEntities = set([e for (e, e_type) in entities2files.keys()])
 		self.csoResourcePath = '../../resources/CSO.3.1.csv'
 		self.blacklist_path = '../../resources/blacklist.txt'
+		#these are terms that introduce a target entity and need to be  stripped out from it e.g. "usage of computer simulation" --> "computer simulation"
+		self.empty_terms_path = '../../resources/empty_terms.txt'
 		self.mag_topics_dir = '../../dataset/computer_science/'
 		self.open_alex_wikidata_concepts_path = '../../resources/wikidata_aeco.json'
 		self.debug_output_dir = '../../outputs/extracted_triples/debug/'
@@ -29,6 +31,7 @@ class EntitiesValidator:
 		self.validEntities = set()
 		self.invalidEntities = set()
 		self.blacklist = set()
+		self.emptylist = set()
 
 
 	def loadCSOTopics(self):
@@ -49,6 +52,10 @@ class EntitiesValidator:
 		with open(self.blacklist_path) as f:
 			for line in f.readlines():
 				self.blacklist.add(line.strip())
+	def loadEmptylist(self):
+		with open(self.empty_terms_path) as f:
+			for line in f.readlines():
+				self.emptylist.add(line.strip())
 
 	def load_open_alex_concepts(self):
 		# Open the file and read its content
@@ -79,9 +86,18 @@ class EntitiesValidator:
 		semcor_ic = wordnet_ic.ic('ic-semcor.dat')
 		for e in self.inputEntities:
 			# no blacklist, no 1-character entities, no only numbers, #no entities that start with a number, no entities with more than 7 tokens
-			if (e in self.blacklist or len(e) <= 2 or e.isdigit() or (len(nltk.word_tokenize(e)) >= 7 and not " of " in e)):
+			if (e in self.blacklist or len(e) <= 2 or e.isdigit() or (len(nltk.word_tokenize(e)) >= 10 and not " of " in e and not " in " in e)):
 				self.invalidEntities.add(str(e))
 				continue
+
+			if len(nltk.word_tokenize(e)) > 5 and " in " in e:
+				e = e.split(" in ")[0]
+			elif e.startswith(tuple(self.emptylist)):
+				for term in self.emptylist:
+					if e.startswith(term):
+						e = e[len(term):].strip()
+
+
 
 			# no entities made only of stopwords and/or blacklist tokens (e.g. "a methodology")
 			tokens = e.lower().split()  # Tokenize and convert to lowercase
@@ -114,6 +130,7 @@ class EntitiesValidator:
 	def run(self):
 		self.loadCSOTopics()
 		self.loadBlacklist()
+		self.loadEmptylist()
 		self.loadMAGTopics()
 		self.load_open_alex_concepts()
 		self.validation()
