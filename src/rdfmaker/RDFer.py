@@ -49,31 +49,31 @@ class RDFer:
 		self.g_onto_discarded_list = None # list of triples discarded by the ontology 
 
 		#NAMESPACES
-		self.CSKG_NAMESPACE = Namespace("http://scholkg.kmi.open.ac.uk/cskg/ontology#")
-		self.CSKG_NAMESPACE_RESOURCE = Namespace("http://scholkg.kmi.open.ac.uk/cskg/resource/")
+		self.AECOKG_NAMESPACE = Namespace("http://mydomain.org/aecokg/ontology#")
+		self.AECOKG_NAMESPACE_RESOURCE = Namespace("http://mydomain.org/aecokg/resource/")
 		self.CSO_NAMESPACE = Namespace("https://cso.kmi.open.ac.uk/topics/")
 		self.DC = Namespace("http://purl.org/dc/terms/")
 		self.WIKI_NAMESPACE = Namespace("http://www.wikidata.org/entity/")
 		self.PROVO = Namespace('http://www.w3.org/ns/prov#')
 		self.DBPEDIA = Namespace('http://dbpedia.org/resource/')
 
-		self.g.bind("cskg-ont", self.CSKG_NAMESPACE)
-		self.g.bind("cskg", self.CSKG_NAMESPACE_RESOURCE)
+		self.g.bind("aeco-ont", self.AECOKG_NAMESPACE)
+		self.g.bind("aeco", self.AECOKG_NAMESPACE_RESOURCE)
 		self.g.bind("provo", self.PROVO)
 		self.g.bind("cso", self.CSO_NAMESPACE)
 		self.g.bind("owl", OWL)
 		self.g.bind('dbpedia', self.DBPEDIA)
 		self.g.bind('wd', self.WIKI_NAMESPACE)
 
-		self.RESEARCH_ENTITY = self.CSKG_NAMESPACE.ResearchEntity
-		self.METHOD = self.CSKG_NAMESPACE.Method
-		self.OTHER_ENTITY = self.CSKG_NAMESPACE.OtherEntity
-		self.TASK = self.CSKG_NAMESPACE.Task
-		self.MATERIAL = self.CSKG_NAMESPACE.Material
-		self.METRIC = self.CSKG_NAMESPACE.Metric
-		self.TOPIC = self.CSKG_NAMESPACE.CSOTopic
-		self.MAG_PAPER = self.CSKG_NAMESPACE.MagPaper
-		self.WIKIDATA = self.CSKG_NAMESPACE.Wikidata
+		self.RESEARCH_ENTITY = self.AECOKG_NAMESPACE.ResearchEntity
+		self.METHOD = self.AECOKG_NAMESPACE.Method
+		self.OTHER_ENTITY = self.AECOKG_NAMESPACE.OtherEntity
+		self.TASK = self.AECOKG_NAMESPACE.Task
+		self.MATERIAL = self.AECOKG_NAMESPACE.Material
+		self.METRIC = self.AECOKG_NAMESPACE.Metric
+		self.TOPIC = self.AECOKG_NAMESPACE.CSOTopic
+		self.OPENALEX_PAPER = self.AECOKG_NAMESPACE.OpenAlexPaper
+		self.WIKIDATA = self.AECOKG_NAMESPACE.Wikidata
 
 		#DATA PROPERTIES
 		self.HAS_SUPPORT = "hasSupport"	# Research triple data property
@@ -99,8 +99,10 @@ class RDFer:
 		self.g.add((self.METRIC, RDF.type, OWL.Class))
 		self.g.add((self.METRIC, RDFS.comment, Literal("A measure of quantitative assessment, commonly used for comparing or assessing the performance of a method.  Some examples include ‘word error rate', 'minimum classification error', 'normalized mutual information', and 'fault exposure ratio'.")))
 
-		self.g.add((self.MAG_PAPER, RDF.type, OWL.Class))
-		self.g.add((self.MAG_PAPER, RDFS.comment, Literal("A paper indexed in the Microsoft Academic Graph dataset")))
+		#self.g.add((self.MAG_PAPER, RDF.type, OWL.Class))
+		#self.g.add((self.MAG_PAPER, RDFS.comment, Literal("A paper indexed in the Microsoft Academic Graph dataset")))
+		self.g.add((self.OPENALEX_PAPER, RDF.type, OWL.Class))
+		self.g.add((self.OPENALEX_PAPER, RDFS.comment, Literal("A paper indexed in the OpenAlex dataset")))
 
 		self.g.add((self.METHOD, RDFS.subClassOf, self.RESEARCH_ENTITY))
 		self.g.add((self.OTHER_ENTITY, RDFS.subClassOf, self.RESEARCH_ENTITY))
@@ -109,7 +111,7 @@ class RDFer:
 		self.g.add((self.METRIC, RDFS.subClassOf, self.RESEARCH_ENTITY))
 
 		#ADD our Statement class
-		self.g.add((self.CSKG_NAMESPACE.Statement, RDFS.subClassOf, RDF.Statement))
+		self.g.add((self.AECOKG_NAMESPACE.Statement, RDFS.subClassOf, RDF.Statement))
 
 
 
@@ -148,11 +150,11 @@ class RDFer:
 		# create upper object properties based on verb predicates
 		for rel in rel2info:
 			if rel != 'skos:broader/is/hyponym-of':
-				oproperty_uri = URIRef(self.CSKG_NAMESPACE + rel)
+				oproperty_uri = URIRef(self.AECOKG_NAMESPACE + rel)
 				self.g.add((oproperty_uri, RDF.type, OWL.ObjectProperty))
 				rel_inverse = str(rel2info[rel]['inverse']).replace('by', 'By')
 				if rel_inverse != 'nan':
-					oproperty_inverse_uri = URIRef(self.CSKG_NAMESPACE + rel_inverse)
+					oproperty_inverse_uri = URIRef(self.AECOKG_NAMESPACE + rel_inverse)
 					self.g.add((oproperty_inverse_uri, RDF.type, OWL.ObjectProperty))
 					self.g.add((oproperty_inverse_uri, OWL.inverseOf, oproperty_uri))
 
@@ -165,16 +167,16 @@ class RDFer:
 			validity = row['valid'] == 'y'
 			transitive = row['transitivity']
 
-			s_class = URIRef(self.CSKG_NAMESPACE + kind_s)
-			o_class = URIRef(self.CSKG_NAMESPACE + kind_o)
+			s_class = URIRef(self.AECOKG_NAMESPACE + kind_s)
+			o_class = URIRef(self.AECOKG_NAMESPACE + kind_o)
 
 			if rel != 'skos:broader/is/hyponym-of' and validity:
 
 				self.validDomainRelRange.add((kind_s, rel, kind_o))
 				
-				oproperty_uri = URIRef(self.CSKG_NAMESPACE + rel)
+				oproperty_uri = URIRef(self.AECOKG_NAMESPACE + rel)
 				if rel.replace(kind_o, '') in rel2info and str(rel2info[rel.replace(kind_o, '')]['inverse']) != 'nan':
-					oproperty_inverse_uri = URIRef(self.CSKG_NAMESPACE + kind_o.lower() + rel2info[rel.replace(kind_o, '')]['inverse'].title().replace('by', 'By'))
+					oproperty_inverse_uri = URIRef(self.AECOKG_NAMESPACE + kind_o.lower() + rel2info[rel.replace(kind_o, '')]['inverse'].title().replace('by', 'By'))
 					#self.types2rel_inverse[(o_class, s_class)] = oproperty_inverse_uri
 					self.oproperty2inverse[oproperty_uri] = oproperty_inverse_uri #global to apply also to data
 			
@@ -184,9 +186,9 @@ class RDFer:
 				property2range[oproperty_uri] = o_class
 				property2inverse[oproperty_uri] = oproperty_inverse_uri
 				isTransitiveProperty[oproperty_uri] = transitive == 'y'
-				property2up_property[oproperty_uri] = URIRef(self.CSKG_NAMESPACE + rel.replace(kind_o, ''))
+				property2up_property[oproperty_uri] = URIRef(self.AECOKG_NAMESPACE + rel.replace(kind_o, ''))
 				if str(rel2info[rel.replace(kind_o, '')]['inverse']) != 'nan':
-					property2up_property[oproperty_inverse_uri] = URIRef(self.CSKG_NAMESPACE + rel2info[rel.replace(kind_o, '')]['inverse'].replace('by', 'By'))
+					property2up_property[oproperty_inverse_uri] = URIRef(self.AECOKG_NAMESPACE + rel2info[rel.replace(kind_o, '')]['inverse'].replace('by', 'By'))
 
 		self.oproperty2inverse[SKOS.broader] = SKOS.narrower #global to apply also to data
 
@@ -234,17 +236,17 @@ class RDFer:
 			domain_classes_clean = None
 			range_clean = None
 			p = None
-			if objectPropertyUri.n3() == '<' + self.CSKG_NAMESPACE + 'conjunction>':
+			if objectPropertyUri.n3() == '<' + self.AECOKG_NAMESPACE + 'conjunction>':
 				domain_classes_clean = ['Metric', 'Method', 'Task', 'OtherEntity', 'Material']
 				range_clean = 'Metric, Method, Task, OtherEntity, Material'
 				p = 'conjunction'
 
-			elif objectPropertyUri.n3().startswith('<' + self.CSKG_NAMESPACE + 'interactsWith'):
+			elif objectPropertyUri.n3().startswith('<' + self.AECOKG_NAMESPACE + 'interactsWith'):
 				domain_classes_clean = ['Metric', 'Method', 'Task', 'OtherEntity', 'Material']
 				range_clean = 'Metric, Method, Task, OtherEntity, Material'
 				p = 'interactsWith'
 
-			elif objectPropertyUri.n3().startswith('<' + self.CSKG_NAMESPACE + 'basedOn'):
+			elif objectPropertyUri.n3().startswith('<' + self.AECOKG_NAMESPACE + 'basedOn'):
 				domain_classes_clean = [ x[x.index("#") + 1:] for x in domain_classes]
 				range_clean = property2range[objectPropertyUri]
 				range_clean = range_clean[range_clean.index("#") + 1:]
@@ -252,7 +254,7 @@ class RDFer:
 				#cleaning of the property
 				p = 'basedOn'
 
-			elif objectPropertyUri.n3().startswith('<' + self.CSKG_NAMESPACE + 'convertsTo'):
+			elif objectPropertyUri.n3().startswith('<' + self.AECOKG_NAMESPACE + 'convertsTo'):
 				domain_classes_clean = [ x[x.index("#") + 1:] for x in domain_classes]
 				range_clean = property2range[objectPropertyUri]
 				range_clean = range_clean[range_clean.index("#") + 1:]
@@ -260,7 +262,7 @@ class RDFer:
 				#cleaning of the property
 				p = 'convertsTo'
 
-			elif objectPropertyUri.n3().startswith('<' + self.CSKG_NAMESPACE + 'contributesTo'):
+			elif objectPropertyUri.n3().startswith('<' + self.AECOKG_NAMESPACE + 'contributesTo'):
 				domain_classes_clean = [ x[x.index("#") + 1:] for x in domain_classes]
 				range_clean = property2range[objectPropertyUri]
 				range_clean = range_clean[range_clean.index("#") + 1:]
@@ -284,9 +286,9 @@ class RDFer:
 			comment += rel2info[p]['description']
 			self.g.add((objectPropertyUri, RDFS.comment, Literal(comment)))
 
-			if objectPropertyUri.n3() != '<' + self.CSKG_NAMESPACE + 'conjunction>' and \
-				not objectPropertyUri.n3().startswith('<' + self.CSKG_NAMESPACE + 'interactsWith') and \
-				not objectPropertyUri.n3().startswith('<' + self.CSKG_NAMESPACE + 'basedOn') :
+			if objectPropertyUri.n3() != '<' + self.AECOKG_NAMESPACE + 'conjunction>' and \
+				not objectPropertyUri.n3().startswith('<' + self.AECOKG_NAMESPACE + 'interactsWith') and \
+				not objectPropertyUri.n3().startswith('<' + self.AECOKG_NAMESPACE + 'basedOn') :
 				pi = property2inverse[objectPropertyUri]
 				pi = pi[pi.index("#") + 1:]
 				m = re.search("[A-Z]", pi)
@@ -301,20 +303,20 @@ class RDFer:
 
 
 	def defineDataProperties(self):
-		self.g.add((URIRef(self.CSKG_NAMESPACE + self.HAS_SUPPORT), RDF.type, OWL.DatatypeProperty))
-		self.g.add((URIRef(self.CSKG_NAMESPACE + self.HAS_SUPPORT), RDFS.domain, self.CSKG_NAMESPACE.Statement))
-		self.g.add((URIRef(self.CSKG_NAMESPACE + self.HAS_SUPPORT), RDFS.range, RDFS.Literal))
-		self.g.add((URIRef(self.CSKG_NAMESPACE + self.HAS_SUPPORT), RDFS.comment, Literal("This property indicates the number of papers from where the predicate between subject and object comes from.")))
+		self.g.add((URIRef(self.AECOKG_NAMESPACE + self.HAS_SUPPORT), RDF.type, OWL.DatatypeProperty))
+		self.g.add((URIRef(self.AECOKG_NAMESPACE + self.HAS_SUPPORT), RDFS.domain, self.AECOKG_NAMESPACE.Statement))
+		self.g.add((URIRef(self.AECOKG_NAMESPACE + self.HAS_SUPPORT), RDFS.range, RDFS.Literal))
+		self.g.add((URIRef(self.AECOKG_NAMESPACE + self.HAS_SUPPORT), RDFS.comment, Literal("This property indicates the number of papers from where the predicate between subject and object comes from.")))
 
-		self.g.add((URIRef(self.CSKG_NAMESPACE + self.IS_INFERRED), RDF.type, OWL.DatatypeProperty))
-		self.g.add((URIRef(self.CSKG_NAMESPACE + self.IS_INFERRED), RDFS.domain, self.CSKG_NAMESPACE.Statement))
-		self.g.add((URIRef(self.CSKG_NAMESPACE + self.IS_INFERRED), RDFS.range, RDFS.Literal))
-		self.g.add((URIRef(self.CSKG_NAMESPACE + self.IS_INFERRED), RDFS.comment, Literal("This property indicates if the statement was inferred by transitivity. If 'false' it means that it was derived directly from the papers. If 'true' it means that it was inferred when computing the transitive closure of AI-KG.")))
+		self.g.add((URIRef(self.AECOKG_NAMESPACE + self.IS_INFERRED), RDF.type, OWL.DatatypeProperty))
+		self.g.add((URIRef(self.AECOKG_NAMESPACE + self.IS_INFERRED), RDFS.domain, self.AECOKG_NAMESPACE.Statement))
+		self.g.add((URIRef(self.AECOKG_NAMESPACE + self.IS_INFERRED), RDFS.range, RDFS.Literal))
+		self.g.add((URIRef(self.AECOKG_NAMESPACE + self.IS_INFERRED), RDFS.comment, Literal("This property indicates if the statement was inferred by transitivity. If 'false' it means that it was derived directly from the papers. If 'true' it means that it was inferred when computing the transitive closure of AI-KG.")))
 
-		self.g.add((URIRef(self.CSKG_NAMESPACE + self.IS_INVERSE), RDF.type, OWL.DatatypeProperty))
-		self.g.add((URIRef(self.CSKG_NAMESPACE + self.IS_INVERSE), RDFS.domain, self.CSKG_NAMESPACE.Statement))
-		self.g.add((URIRef(self.CSKG_NAMESPACE + self.IS_INVERSE), RDFS.range, RDFS.Literal))
-		self.g.add((URIRef(self.CSKG_NAMESPACE + self.IS_INVERSE), RDFS.comment, Literal("This property indicates if the statement was derived by inferring the inverse relation of a relation originally extracted from the corpus of paper.")))
+		self.g.add((URIRef(self.AECOKG_NAMESPACE + self.IS_INVERSE), RDF.type, OWL.DatatypeProperty))
+		self.g.add((URIRef(self.AECOKG_NAMESPACE + self.IS_INVERSE), RDFS.domain, self.AECOKG_NAMESPACE.Statement))
+		self.g.add((URIRef(self.AECOKG_NAMESPACE + self.IS_INVERSE), RDFS.range, RDFS.Literal))
+		self.g.add((URIRef(self.AECOKG_NAMESPACE + self.IS_INVERSE), RDFS.comment, Literal("This property indicates if the statement was derived by inferring the inverse relation of a relation originally extracted from the corpus of paper.")))
 
 
 
@@ -332,9 +334,8 @@ class RDFer:
 		self.cskg2dbpedia = pickle.load(pickle_in)
 		pickle_in.close()
 
-		pickle_in = open('../../resources/only_embeddings_label2cskg_entity.pickle', 'rb')
-		self.label2cskg_entity = pickle.load(pickle_in)
-		#self.label2cskg_entity = {}
+		with open('../../resources/label2cskg_entity_embeddingMapping.json', 'r', encoding='utf-8') as file:
+			self.label2cskg_entity = json.load(file)
 
 		self.data_trusted_df = pd.read_csv(data_trusted)
 		self.data_classified_df = pd.read_csv(data_classified)
@@ -369,11 +370,11 @@ class RDFer:
 
 			if (stype, rel + otype, otype) in self.validDomainRelRange or (rel == 'skos:broader/is/hyponym-of' and stype == otype):
 
-				s_uri = URIRef(self.CSKG_NAMESPACE_RESOURCE + str(s).replace(' ', '_'))
-				o_uri = URIRef(self.CSKG_NAMESPACE_RESOURCE + str(o).replace(' ', '_'))
+				s_uri = URIRef(self.AECOKG_NAMESPACE_RESOURCE + str(s).replace(' ', '_'))
+				o_uri = URIRef(self.AECOKG_NAMESPACE_RESOURCE + str(o).replace(' ', '_'))
 
-				stype_uri = URIRef(self.CSKG_NAMESPACE + stype)
-				otype_uri = URIRef(self.CSKG_NAMESPACE + otype)
+				stype_uri = URIRef(self.AECOKG_NAMESPACE + stype)
+				otype_uri = URIRef(self.AECOKG_NAMESPACE + otype)
 
 				# adding entity types
 				self.g.add((s_uri, RDF.type, stype_uri))
@@ -387,11 +388,11 @@ class RDFer:
 				if rel == 'skos:broader/is/hyponym-of':
 					rel_uri = SKOS.broader
 				else:
-					rel_uri = URIRef(self.CSKG_NAMESPACE + rel + otype)
+					rel_uri = URIRef(self.AECOKG_NAMESPACE + rel + otype)
 
 				#statement creation
-				statement_x = URIRef(self.CSKG_NAMESPACE_RESOURCE + 'statement_' + str(self.statement_id))
-				self.g.add((statement_x, RDF.type, self.CSKG_NAMESPACE.Statement))
+				statement_x = URIRef(self.AECOKG_NAMESPACE_RESOURCE + 'statement_' + str(self.statement_id))
+				self.g.add((statement_x, RDF.type, self.AECOKG_NAMESPACE.Statement))
 				self.g.add((statement_x, RDF.type, self.PROVO.Entity))
 
 				# add of subject, predicate, and object
@@ -402,33 +403,33 @@ class RDFer:
 				# add source type to the statement
 				for source_type in tools:
 					if source_type == 'pos tagger':
-						self.g.add((statement_x, self.PROVO.wasGeneratedBy, self.CSKG_NAMESPACE_RESOURCE.PoSTagger))
+						self.g.add((statement_x, self.PROVO.wasGeneratedBy, self.AECOKG_NAMESPACE_RESOURCE.PoSTagger))
 					elif source_type == 'openie':
-						self.g.add((statement_x, self.PROVO.wasGeneratedBy, self.CSKG_NAMESPACE_RESOURCE.OpenIE))
+						self.g.add((statement_x, self.PROVO.wasGeneratedBy, self.AECOKG_NAMESPACE_RESOURCE.OpenIE))
 					elif source_type == 'dependency tagger':
-						self.g.add((statement_x, self.PROVO.wasGeneratedBy, self.CSKG_NAMESPACE_RESOURCE.DependencyTagger))
+						self.g.add((statement_x, self.PROVO.wasGeneratedBy, self.AECOKG_NAMESPACE_RESOURCE.DependencyTagger))
 					elif source_type == 'dygiepp':
-						self.g.add((statement_x, self.PROVO.wasGeneratedBy, URIRef(self.CSKG_NAMESPACE_RESOURCE.DyGIEpp)))
+						self.g.add((statement_x, self.PROVO.wasGeneratedBy, URIRef(self.AECOKG_NAMESPACE_RESOURCE.DyGIEpp)))
 					elif source_type == 'llm':
-						self.g.add((statement_x, self.PROVO.wasGeneratedBy, URIRef(self.CSKG_NAMESPACE_RESOURCE.Llm)))
+						self.g.add((statement_x, self.PROVO.wasGeneratedBy, URIRef(self.AECOKG_NAMESPACE_RESOURCE.Llm)))
 
 				#support 
-				self.g.add((statement_x, URIRef(self.CSKG_NAMESPACE + self.HAS_SUPPORT),  Literal(int(sup), datatype=XSD.integer)))
+				self.g.add((statement_x, URIRef(self.AECOKG_NAMESPACE + self.HAS_SUPPORT),  Literal(int(sup), datatype=XSD.integer)))
 
 				for (file,sent) in fileSents:
-					mag_uri = URIRef(self.CSKG_NAMESPACE_RESOURCE + file.replace('.json', ''))
+					mag_uri = URIRef(self.AECOKG_NAMESPACE_RESOURCE + file.replace('.json', ''))
 					self.g.add((statement_x, self.PROVO.wasDerivedFrom,  mag_uri))
 					self.paper_set.add(file.replace('.json', ''))
 					
 				self.statement_id += 1
 
 				if rel_uri in self.oproperty2inverse:
-					statement_x = URIRef(self.CSKG_NAMESPACE_RESOURCE + 'statement_' + str(self.statement_id))
-					self.g.add((statement_x, RDF.type, self.CSKG_NAMESPACE.Statement))
+					statement_x = URIRef(self.AECOKG_NAMESPACE_RESOURCE + 'statement_' + str(self.statement_id))
+					self.g.add((statement_x, RDF.type, self.AECOKG_NAMESPACE.Statement))
 					self.g.add((statement_x, RDF.type, self.PROVO.Entity))
 
 					#yes inverse
-					self.g.add((statement_x, URIRef(self.CSKG_NAMESPACE + self.IS_INVERSE),  Literal('true', datatype=XSD.boolean)))
+					self.g.add((statement_x, URIRef(self.AECOKG_NAMESPACE + self.IS_INVERSE),  Literal('true', datatype=XSD.boolean)))
 
 					# add of subject, predicate, and object
 					self.g.add((statement_x, RDF.subject, o_uri))
@@ -438,21 +439,21 @@ class RDFer:
 					# add source type to the statement
 					for source_type in tools:
 						if source_type == 'pos tagger':
-							self.g.add((statement_x, self.PROVO.wasGeneratedBy, self.CSKG_NAMESPACE_RESOURCE.PoSTagger))
+							self.g.add((statement_x, self.PROVO.wasGeneratedBy, self.AECOKG_NAMESPACE_RESOURCE.PoSTagger))
 						elif source_type == 'openie':
-							self.g.add((statement_x, self.PROVO.wasGeneratedBy, self.CSKG_NAMESPACE_RESOURCE.OpenIE))
+							self.g.add((statement_x, self.PROVO.wasGeneratedBy, self.AECOKG_NAMESPACE_RESOURCE.OpenIE))
 						elif source_type == 'dependency tagger':
-							self.g.add((statement_x, self.PROVO.wasGeneratedBy, self.CSKG_NAMESPACE_RESOURCE.DependencyTagger))
+							self.g.add((statement_x, self.PROVO.wasGeneratedBy, self.AECOKG_NAMESPACE_RESOURCE.DependencyTagger))
 						elif source_type == 'dygiepp':
-							self.g.add((statement_x, self.PROVO.wasGeneratedBy, URIRef(self.CSKG_NAMESPACE_RESOURCE.DyGIEpp)))
+							self.g.add((statement_x, self.PROVO.wasGeneratedBy, URIRef(self.AECOKG_NAMESPACE_RESOURCE.DyGIEpp)))
 						elif source_type == 'llm':
-							self.g.add((statement_x, self.PROVO.wasGeneratedBy, URIRef(self.CSKG_NAMESPACE_RESOURCE.Llm)))
+							self.g.add((statement_x, self.PROVO.wasGeneratedBy, URIRef(self.AECOKG_NAMESPACE_RESOURCE.Llm)))
 
 					#support 
-					self.g.add((statement_x, URIRef(self.CSKG_NAMESPACE + self.HAS_SUPPORT),  Literal(int(sup), datatype=XSD.integer)))
+					self.g.add((statement_x, URIRef(self.AECOKG_NAMESPACE + self.HAS_SUPPORT),  Literal(int(sup), datatype=XSD.integer)))
 
 					for (file,sent) in fileSents:
-						mag_uri = URIRef(self.CSKG_NAMESPACE_RESOURCE + file.replace('.json', ''))
+						mag_uri = URIRef(self.AECOKG_NAMESPACE_RESOURCE + file.replace('.json', ''))
 						self.g.add((statement_x, self.PROVO.wasDerivedFrom,  mag_uri))
 
 					
@@ -460,18 +461,18 @@ class RDFer:
 		
 		# linkage to external resources
 		for cskge, csoe in self.cskg2cso.items():
-			cskge_uri = URIRef(self.CSKG_NAMESPACE_RESOURCE + cskge.replace(' ', '_'))
+			cskge_uri = URIRef(self.AECOKG_NAMESPACE_RESOURCE + cskge.replace(' ', '_'))
 			self.g.add((cskge_uri, OWL.sameAs, URIRef(csoe)))
 		for cskge, dbe in self.cskg2dbpedia.items():
-			cskge_uri = URIRef(self.CSKG_NAMESPACE_RESOURCE + cskge.replace(' ', '_'))
+			cskge_uri = URIRef(self.AECOKG_NAMESPACE_RESOURCE + cskge.replace(' ', '_'))
 			self.g.add((cskge_uri, OWL.sameAs, URIRef(dbe)))
 		for cskge, wde in self.cskg2wikidata.items():
-			cskge_uri = URIRef(self.CSKG_NAMESPACE_RESOURCE + cskge.replace(' ', '_'))
+			cskge_uri = URIRef(self.AECOKG_NAMESPACE_RESOURCE + cskge.replace(' ', '_'))
 			self.g.add((cskge_uri, OWL.sameAs, URIRef(wde)))
 
 		# add other labels
 		for label, cskge in self.label2cskg_entity.items():
-			cskge_uri = URIRef(self.CSKG_NAMESPACE_RESOURCE + cskge.replace(' ', '_'))
+			cskge_uri = URIRef(self.AECOKG_NAMESPACE_RESOURCE + cskge.replace(' ', '_'))
 			self.g.add((cskge_uri, RDFS.label, Literal(label)))
 
 
@@ -654,35 +655,38 @@ class RDFer:
 				with open(d+file, 'r') as f:
 					for line in f:
 						dline = json.loads(line)
-						magid = dline['_id']
-						doi = dline['_source']['doi']
+						#magid = dline['_id']
+						oaid = dline['_id'].split('/')[-1]
+						#doi = dline['_source']['doi']
 
-						if magid in self.paper_set:
+						if oaid in self.paper_set:
 							if 'urls' in dline['_source']:
 								urls = dline['_source']['urls']
 							else:
 								urls = []
-							title = dline['_source']['papertitle']
+							#title = dline['_source']['papertitle']
+							title = dline['_source']['title']
 
-							self.g.add((URIRef(self.CSKG_NAMESPACE_RESOURCE + magid), RDF.type, self.CSKG_NAMESPACE.MagPaper))
-							self.g.add((URIRef(self.CSKG_NAMESPACE_RESOURCE + magid), self.DC.title, Literal(title)))
 
-							if doi != "":
-								try:
-									validator('https://doi.org/' + doi)
-									self.g.add((URIRef(self.CSKG_NAMESPACE_RESOURCE + magid), self.CSKG_NAMESPACE.hasDOI, Literal('https://doi.org/' + doi)))
-								except ValidationError as e:
-									print(e, '\nskipped:', doi)
+							self.g.add((URIRef(self.AECOKG_NAMESPACE_RESOURCE + oaid), RDF.type, self.AECOKG_NAMESPACE.OpenAlexPaper))
+							self.g.add((URIRef(self.AECOKG_NAMESPACE_RESOURCE + oaid), self.DC.title, Literal(title)))
+
+							#if doi != "":
+							#	try:
+							#		validator('https://doi.org/' + doi)
+							#		self.g.add((URIRef(self.AECOKG_NAMESPACE_RESOURCE + oaid), self.AECOKG_NAMESPACE.hasDOI, Literal('https://doi.org/' + doi)))
+							#	except ValidationError as e:
+							#		print(e, '\nskipped:', doi)
 
 							for url in urls:
-								self.g.add((URIRef(self.CSKG_NAMESPACE_RESOURCE + magid), self.CSKG_NAMESPACE.findableAt, Literal(url)))
+								self.g.add((URIRef(self.AECOKG_NAMESPACE_RESOURCE + oaid), self.AECOKG_NAMESPACE.findableAt, Literal(url)))
 
 
 	def run(self):
 		self.createClassesStructure()
 		self.defineObjectProperties()
 		self.defineDataProperties()
-		self.g.serialize(destination=self.kgname + '-onto.ttl', format='turtle') # save only the ontology
+		self.g.serialize(destination=self.kgname + '-onto.ttl', format='turtle', encoding='utf-8') # save only the ontology
 
 		self.loadData()
 		self.apply_ontology()
