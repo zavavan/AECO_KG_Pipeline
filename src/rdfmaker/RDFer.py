@@ -29,7 +29,7 @@ class RDFer:
 		self.oproperty2inverse = {}
 		self.validDomainRelRange = set()
 		self.statement_id = 0
-		self.paper_set = set() #used to save all the mag ids of papers
+		self.paper_set = set() #used to save all the openalex ids of papers
 
 		# ANALYSIS OF THE GRAPH
 		self.triples = []
@@ -49,8 +49,8 @@ class RDFer:
 		self.g_onto_discarded_list = None # list of triples discarded by the ontology 
 
 		#NAMESPACES
-		self.AECOKG_NAMESPACE = Namespace("http://mydomain.org/aecokg/ontology#")
-		self.AECOKG_NAMESPACE_RESOURCE = Namespace("http://mydomain.org/aecokg/resource/")
+		self.AECOKG_NAMESPACE = Namespace("http://aeco-research.org/aecokg/ontology#")
+		self.AECOKG_NAMESPACE_RESOURCE = Namespace("http://aeco-research.org/aecokg/resource/")
 		self.CSO_NAMESPACE = Namespace("https://cso.kmi.open.ac.uk/topics/")
 		self.DC = Namespace("http://purl.org/dc/terms/")
 		self.WIKI_NAMESPACE = Namespace("http://www.wikidata.org/entity/")
@@ -417,9 +417,9 @@ class RDFer:
 				self.g.add((statement_x, URIRef(self.AECOKG_NAMESPACE + self.HAS_SUPPORT),  Literal(int(sup), datatype=XSD.integer)))
 
 				for (file,sent) in fileSents:
-					mag_uri = URIRef(self.AECOKG_NAMESPACE_RESOURCE + file.replace('.json', ''))
-					self.g.add((statement_x, self.PROVO.wasDerivedFrom,  mag_uri))
-					self.paper_set.add(file.replace('.json', ''))
+					oa_uri = URIRef(self.AECOKG_NAMESPACE_RESOURCE + file.split('/')[-1])
+					self.g.add((statement_x, self.PROVO.wasDerivedFrom,  oa_uri))
+					self.paper_set.add(file.split('/')[-1])
 					
 				self.statement_id += 1
 
@@ -453,8 +453,9 @@ class RDFer:
 					self.g.add((statement_x, URIRef(self.AECOKG_NAMESPACE + self.HAS_SUPPORT),  Literal(int(sup), datatype=XSD.integer)))
 
 					for (file,sent) in fileSents:
-						mag_uri = URIRef(self.AECOKG_NAMESPACE_RESOURCE + file.replace('.json', ''))
-						self.g.add((statement_x, self.PROVO.wasDerivedFrom,  mag_uri))
+						oa_uri = URIRef(self.AECOKG_NAMESPACE_RESOURCE + file.split('/')[-1])
+						self.g.add((statement_x, self.PROVO.wasDerivedFrom, oa_uri))
+						self.paper_set.add(file.split('/')[-1])
 
 					
 					self.statement_id += 1
@@ -647,8 +648,8 @@ class RDFer:
 
 
 	def addPaperInfo(self):
-		d = '../../dataset/computer_science/'
-		validator = URLValidator()
+		d = '../../dataset/aeco/'
+		#validator = URLValidator()
 		for file in os.listdir(d):
 			if file[-4:] == 'json':
 				print(d+file)
@@ -657,7 +658,7 @@ class RDFer:
 						dline = json.loads(line)
 						#magid = dline['_id']
 						oaid = dline['_id'].split('/')[-1]
-						#doi = dline['_source']['doi']
+						oaurl = dline['_id']
 
 						if oaid in self.paper_set:
 							if 'urls' in dline['_source']:
@@ -671,12 +672,12 @@ class RDFer:
 							self.g.add((URIRef(self.AECOKG_NAMESPACE_RESOURCE + oaid), RDF.type, self.AECOKG_NAMESPACE.OpenAlexPaper))
 							self.g.add((URIRef(self.AECOKG_NAMESPACE_RESOURCE + oaid), self.DC.title, Literal(title)))
 
-							#if doi != "":
-							#	try:
-							#		validator('https://doi.org/' + doi)
-							#		self.g.add((URIRef(self.AECOKG_NAMESPACE_RESOURCE + oaid), self.AECOKG_NAMESPACE.hasDOI, Literal('https://doi.org/' + doi)))
-							#	except ValidationError as e:
-							#		print(e, '\nskipped:', doi)
+							if oaurl != "":
+								try:
+									#validator('https://doi.org/' + doi)
+									self.g.add((URIRef(self.AECOKG_NAMESPACE_RESOURCE + oaid), self.AECOKG_NAMESPACE.hasOpenAlexURL, Literal(oaurl)))
+								except ValidationError as e:
+									print(e, '\nskipped:', oaurl)
 
 							for url in urls:
 								self.g.add((URIRef(self.AECOKG_NAMESPACE_RESOURCE + oaid), self.AECOKG_NAMESPACE.findableAt, Literal(url)))
