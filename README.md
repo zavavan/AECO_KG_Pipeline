@@ -15,7 +15,7 @@
 
 **IMPORTANT** Due to legal issues we are not able to provide the full original data. We provide a sample dataset that can be used to use our pipeline.
 
-SCICERO has been tested on python 3.9. We strongly recommend to use the same python version. 
+SKG-AECO has been tested on python 3.9. We strongly recommend to use the same python version. 
 
 Please install the required libreries using ```pip install -r requirements.txt ```
 
