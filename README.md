@@ -96,7 +96,7 @@ The output will generate 3 files:
 - *my_new_kg_final_data.csv* the data discarded by the pipeline because it does not comply with the ontology
 
 
-## The Computer Science Knowledge Graph
+## The AECO Research Knowledge Graph
 
 The user of this github repository can access to the dump of the created resource, its sparql endpoint, and additional material through a dedicated .
 
@@ -106,7 +106,6 @@ The user of this github repository can access to the dump of the created resourc
 If you have any questions about our work or issues with the repository (e.g., bugs), please contact Vanni Zavarella by email \(vanni.zavarella@unica.it\)
 
 
-Enjoy generating knowledge graphs:)
 
 
 
